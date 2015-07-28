@@ -5,3 +5,12 @@ code {
     margin : 5px 10px;
     display : inline-block;
 }
+
+article {
+	padding : 10px;
+	box-shadow: 0px 3px 3px #888888;
+	margin-top : 5px;
+}
+
+article:nth-child(even) {background-color: #FCEBBD; z-index: 99;}
+article:nth-child(odd) {background-color: #F8E3A5}
