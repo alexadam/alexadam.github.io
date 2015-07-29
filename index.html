@@ -532,27 +532,38 @@ for f in *.aif; do ffmpeg -i "$f" "${f%.aif}.wav"; done</code></pre>
     </article>
 
     <article>
-        <h3>install java plugin for firefox</h3>
+        <h3>Install java plugin for firefox</h3>
         <p>
-            Source: <a href="http://stackoverflow.com/questions/14491322/how-to-add-java-plugin-for-firefox-on-linux">http://stackoverflow.com/questions/14491322/how-to-add-java-plugin-for-firefox-on-linux</a>
-            <code><pre>NOTE: Before installing Java make sure you kill Firefox.
-root@bt:~# killall -9 /opt/firefox/firefox-bin
-You can download java from the official website. (Download tar.gz version)
-We first create the directory and place java there:
-root@bt:~# mkdir /opt/java
-root@bt:~# mv -f jre1.7.0_05/ /opt/java/
-Final changes.
-root@bt:~# update-alternatives --install /usr/bin/java java /opt/java/jre1.7.0_05/bin/java 1
-root@bt:~# update-alternatives --set java /opt/java/jre1.7.0_05/bin/java
-Adding the plugin to Firefox.
-root@bt:~# ln -sf /opt/java/jre1.7.0_05/lib/i386/libnpjp2.so /usr/lib/mozilla/plugins/
-#OR:
-root@bt:~# ln -sf /opt/java/jre1.7.0_05/lib/i386/libnpjp2.so /home/user/mozilla/plugins/
-root@bt:~# export JAVA_HOME="/opt/java/jre1.7.0_05/bin/java"
-Testing the plugin.
-root@bt:~# firefox http://java.com/en/download/testjava.jsp
-            </pre></code>
+          Source: <a href="http://stackoverflow.com/questions/14491322/how-to-add-java-plugin-for-firefox-on-linux">http://stackoverflow.com/questions/14491322/how-to-add-java-plugin-for-firefox-on-linux</a>
         </p>
+            <p>
+              NOTE: Before installing Java make sure you kill Firefox.
+              <pre><code>root@bt:~# killall -9 /opt/firefox/firefox-bin</code></pre>
+            </p>
+            <p>
+              You can download java from the official website. (Download tar.gz version)
+              We first create the directory and place java there:
+              <pre><code>root@bt:~# mkdir /opt/java
+root@bt:~# mv -f jre1.7.0_05/ /opt/java/</code></pre>
+            </p>
+            <p>
+              Final changes.
+              <pre><code>root@bt:~# update-alternatives --install /usr/bin/java java /opt/java/jre1.7.0_05/bin/java 1
+root@bt:~# update-alternatives --set java /opt/java/jre1.7.0_05/bin/java</code></pre>
+            </p>
+            <p>
+              Adding the plugin to Firefox.
+              <pre><code>root@bt:~# ln -sf /opt/java/jre1.7.0_05/lib/i386/libnpjp2.so /usr/lib/mozilla/plugins/</code></pre>
+            </p>
+            <p>
+              OR
+              <pre><code>root@bt:~# ln -sf /opt/java/jre1.7.0_05/lib/i386/libnpjp2.so /home/user/mozilla/plugins/
+root@bt:~# export JAVA_HOME="/opt/java/jre1.7.0_05/bin/java"</code></pre>
+            </p>
+            <p>
+              Testing the plugin.
+              <pre><code>root@bt:~# firefox http://java.com/en/download/testjava.jsp</code></pre>
+            </p>
     </article>
 
     <article>
@@ -581,11 +592,11 @@ sudo apt-get install compiz-plugins
         </p>
         <p><pre>
 Open compizconfig-settings-manager with alt-F2, type ccsm.
-Scroll down to "Ubuntu Unity Plugin". Choose the tab "Switcher". 
-Disable the alt-tab and shift-alt-tab key bindings. 
+Scroll down to "Ubuntu Unity Plugin". Choose the tab "Switcher".
+Disable the alt-tab and shift-alt-tab key bindings.
 ("Key to start the switcher" and "Key to switch to the previous window in the Switcher".
 Click the "Back" button.
-Scroll down to the "Window management" section. 
+Scroll down to the "Window management" section.
 Here you can select another switcher.
 I enable the "Static Application Switcher", resolve any potential conflicts by setting the setting for "Static Application Switcher".
 Now you can tweak the switcher by clicking on it. I have changed alt-tab and shift-alt-tab to "Next window (All windows)" and "Prev window (All windows)".
