@@ -661,6 +661,10 @@ sudo modprobe rtl8723be
             <pre><code>shnsplit -f file.cue -t %n-%t -o flac file.flac
 </code></pre>
         </p>
+        <p>
+            OR
+            <pre><code>cuebreakpoints FILE.cue | sed s/$/0/ | shnsplit -t %t -o flac FILE.flac</code></pre>
+        </p>
     </article>
 
     <article>
