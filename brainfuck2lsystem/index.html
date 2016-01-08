@@ -1,0 +1,139 @@
+
+<html>
+    <head>
+        <title>Brainfuck to L-System</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="css/style.css"/>
+        <script src="js/jquery.min.js"></script>
+        <script src="js/ls.js"></script>
+        <script src="js/engine.js"></script>
+    </head>
+    <body>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-40">
+                    <div class="row">
+                        <span class="title">Brainfuck Code:</span>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <textarea id="bfsource" cols="65" rows="7">+>>++++[<++++>-]<[<++++++>-]+[<[>>>>+<<<<-]>>>>[<<<<+>>>>>>+<<-]<++++[>++++++++<-]>.[-]<+++[>+++<-]>+[>>.+<<-]>>[-]<<<++[<+++++>-]<.<<[>>>>+<<<<-]>>>>[<<<<+>>>>>>+<<-]<<[>>>>.+<<<++++++++++[<[>>+<<-]>>[<<+>>>>>+++++++++++<<<-]<[>+<-]>[<+>>>>+<<<-]>>>[>>>>>>>>>>>>+>+<<<<<<<<<<<<<-]>>>>>>>>>>>>[-[>>>>+<<<<-]>[>>>>+<<<<-]>>>]>>>[<<<+>>>-]<<<[>>+>+<<<-]>[->[<<<<+>>>>-]<[<<<<+>>>>-]<<<<]<+++++++++[>+++++<-]>>[<<+>>-]<<[>---<-]>.[-]<<<<<<<<<<<<<<<<<-]++++++++++.[-]<-]>>>>[-]<[-]++++++++[>++++++++<-]>--.[-]<,----------[<+>-]>>>>>>+<<<<<<<[>+>>>>>+>[-]<<<<<<<-]>++++++++++>>>>>[[-]<<,<<<<<<<->>>>>>>[<<<<+>>>>-]<<<<[>>>>+>+<<<<<-]>>>>>----------[<<<<<<<<+<[>>>>+<<<<-]>>>>[<<<<+>>>>>>+<<-]>[>-<-]>++++++++++[>+++++++++++<-]<<<<<<[>>>>+<<<<-]>>>>[<<<<+>>>>>>+<<-]>>>>[<<->>-]<<++++++++++[>+<-]>[>>>>>>>>>>>>+>+<<<<<<<<<<<<<-]>>>>>>>>>>>>[-[>>>>+<<<<-]>[>>>>+<<<<-]>>>]>>>[<<<+>>>-]+<<<[>>>-<<<-]>[->[<<<<+>>>>-]<[<<<<+>>>>-]<<<<]<<<<<<<<<<<,[-]]>]>[-+++++++++++[>+++++++++++>+++++++++++<<-]>[-[>>>+<<<-]>>>[<<<+>>>>>>>+>+<<<<<-]>>>>[-[>>>>+<<<<-]>[>>>>+<<<<-]>>>]>>>[<<<+>>>-]<<<[>>+>+<<<-]>[->[<<<<+>>>>-]<[<<<<+>>>>-]<<<<]<<<<<<<<[>>>+<<<-]>>>[<<<+>>>>>>>+>+<<<<<-]<<[>>+<<-]>>[<<+>>>>>>+>+<<<<<-]>>>>[-[>>>>+<<<<-]>[>>>>+<<<<-]>[>>>>+<<<<-]>>]>>>[-]<[>+<-]<[-[<<<<+>>>>-]<<<<]<<<<<<<<]<<<<<<<<<<++++++++++[>++++++++++[<[>>+<<-]>>[<<+>>>>>+++++++++++<<<-]<[>+<-]>[<+>>>>+<<<-]>>>[<<<+>>>-]<<<[>>>+>>>>>+<<<<<<<<-]>>>>>>>>>[>>+<<-]>>[<<+<+>>>-]<<<------------[>>>+<<<-]>>>[<<<+>>>>>>>+>+<<<<<-]>>>>[-[>>>>+<<<<-]>[>>>>+<<<<-]>>>]>>>[<<<+>>>-]<<<[>>+>+<<<-]>>>>>>>[<<<+>>>-]<<<[>>>+<<<<<+>>-]>>>>>>>[<<<+>>>-]<<<[>>>+<<<<<<<<<+>>>>>>-]<<<<<<<[->[<<<<+>>>>-]<[<<<<+>>>>-]<<<<]>[<<<<<<<+>>>>>>>-]<<<<<<<<<+++++++++++[>>>+<<<-]>>>[<<<+>>>>>>>+>+<<<<<-]>>>>[-[>>>>+<<<<-]>[>>>>+<<<<-]>>>]>>>[<<<+>>>-]<<<[>>+>+<<<-]>>>>>>>[<<<+>>>-]<<<[>>>+<<<<<+>>-]>>>>>>>[<<<+>>>-]<<<[>>>+<<<<<<<<<+>>>>>>-]<<<<<<<[->[<<<<+>>>>-]<[<<<<+>>>>-]<<<<]>[<<<<<<<+>>>>>>>-]<<<<<<<<<+++++++++++[>>>>>>>+>+<<<<<<<<-]>>>>>>>[-[>>>>+<<<<-]>[>>>>+<<<<-]>>>]>>>[<<<+>>>-]<<<[>>+>+<<<-]>>>>>>>[<<<+>>>-]<<<[>>>+<<<<<+>>-]>>>>>>>[<<<+>>>-]<<<[>>>+<<<<<<<<<+>>>>>>-]<<<<<<<[->[<<<<+>>>>-]<[<<<<+>>>>-]<<<<]>[<<<<<<<+>>>>>>>-]<<<<<<<----[>>>>>>>+<<<<<<<+[>>>>>>>-<<<<<<<[-]]<<<<<<<[>>>>>>>>>>>>+>+<<<<<<<<<<<<<-][]>>>>>>>>>>>>[-[>>>>+<<<<-]>[>>>>+<<<<-]>[>>>>+<<<<-]>>]>>>[-]<[>+<-]<[-[<<<<+>>>>-]<<<<]<<<<<<[-]]<<<<<<<[-]<<<<-]<-]>>>>>>>>>>>[-]<<]<<<<<<<<<<]</textarea>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <span class="title">Translate Options:</span>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <span class="label">&gt;</span><span class="label arrow">&harr;</span>
+                            <select id="translate-gt" class="input-sm">
+                                <option value="F" selected="">F</option>
+                                <option value="+">+</option>
+                                <option value="-">-</option>
+                                <option value="[">[</option>
+                                <option value="]">]</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-3">
+                            <span class="label">&lt;</span><span class="label arrow">&harr;</span>
+                            <select id="translate-lt" class="input-sm">
+                                <option value="F" selected="">F</option>
+                                <option value="+">+</option>
+                                <option value="-">-</option>
+                                <option value="[">[</option>
+                                <option value="]">]</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-3">
+                            <span class="label">+</span><span class="label arrow">&harr;</span>
+                            <select id="translate-plus" class="input-sm">
+                                <option value="F">F</option>
+                                <option value="+" selected="">+</option>
+                                <option value="-">-</option>
+                                <option value="[">[</option>
+                                <option value="]">]</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-3">
+                            <span class="label">-</span><span class="label arrow">&harr;</span>
+                            <select id="translate-minus" class="input-sm">
+                                <option value="F">F</option>
+                                <option value="+">+</option>
+                                <option value="-" selected="">-</option>
+                                <option value="[">[</option>
+                                <option value="]">]</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <br>
+                        <div class="col-sm-3">
+                            <span class="label">[</span><span class="label arrow">&harr;</span>
+                            <select id="translate-so" class="input-sm">
+                                <option value="F">F</option>
+                                <option value="+">+</option>
+                                <option value="-">-</option>
+                                <option value="[" selected="">[</option>
+                                <option value="]">]</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-3">
+                            <span class="label">]</span><span class="label arrow">&harr;</span>
+                            <select id="translate-sc" class="input-sm">
+                                <option value="F">F</option>
+                                <option value="+">+</option>
+                                <option value="-">-</option>
+                                <option value="[">[</option>
+                                <option value="]" selected="">]</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-3">
+                            <span class="label">.</span><span class="label arrow">&harr;</span>
+                            <select id="translate-output" class="input-sm">
+                                <option value="F" selected="">F</option>
+                                <option value="+">+</option>
+                                <option value="-">-</option>
+                                <option value="[">[</option>
+                                <option value="]">]</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-3">
+                            <span class="label">,</span><span class="label arrow">&harr;</span>
+                            <select id="translate-input" class="input-sm">
+                                <option value="F" selected="">F</option>
+                                <option value="+">+</option>
+                                <option value="-">-</option>
+                                <option value="[">[</option>
+                                <option value="]">]</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row center">
+                        <button type="button" name="button" onclick="translate2bf()">Translate to L-System</button>
+                    </div>
+                    <div class="row">
+                        <span class="title">L-System Code:</span>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <textarea id="transcode" cols="65" rows="7">+FF++++[F++++F-]F[F++++++F-]+[F[FFFF+FFFF-]FFFF[FFFF+FFFFFF+FF-]F++++[F++++++++F-]FF[-]F+++[F+++F-]F+[FFF+FF-]FF[-]FFF++[F+++++F-]FFFF[FFFF+FFFF-]FFFF[FFFF+FFFFFF+FF-]FF[FFFFF+FFF++++++++++[F[FF+FF-]FF[FF+FFFFF+++++++++++FFF-]F[F+F-]F[F+FFFF+FFF-]FFF[FFFFFFFFFFFF+F+FFFFFFFFFFFFF-]FFFFFFFFFFFF[-[FFFF+FFFF-]F[FFFF+FFFF-]FFF]FFF[FFF+FFF-]FFF[FF+F+FFF-]F[-F[FFFF+FFFF-]F[FFFF+FFFF-]FFFF]F+++++++++[F+++++F-]FF[FF+FF-]FF[F---F-]FF[-]FFFFFFFFFFFFFFFFF-]++++++++++F[-]F-]FFFF[-]F[-]++++++++[F++++++++F-]F--F[-]FF----------[F+F-]FFFFFF+FFFFFFF[F+FFFFF+F[-]FFFFFFF-]F++++++++++FFFFF[[-]FFFFFFFFFF-FFFFFFF[FFFF+FFFF-]FFFF[FFFF+F+FFFFF-]FFFFF----------[FFFFFFFF+F[FFFF+FFFF-]FFFF[FFFF+FFFFFF+FF-]F[F-F-]F++++++++++[F+++++++++++F-]FFFFFF[FFFF+FFFF-]FFFF[FFFF+FFFFFF+FF-]FFFF[FF-FF-]FF++++++++++[F+F-]F[FFFFFFFFFFFF+F+FFFFFFFFFFFFF-]FFFFFFFFFFFF[-[FFFF+FFFF-]F[FFFF+FFFF-]FFF]FFF[FFF+FFF-]+FFF[FFF-FFF-]F[-F[FFFF+FFFF-]F[FFFF+FFFF-]FFFF]FFFFFFFFFFFF[-]]F]F[-+++++++++++[F+++++++++++F+++++++++++FF-]F[-[FFF+FFF-]FFF[FFF+FFFFFFF+F+FFFFF-]FFFF[-[FFFF+FFFF-]F[FFFF+FFFF-]FFF]FFF[FFF+FFF-]FFF[FF+F+FFF-]F[-F[FFFF+FFFF-]F[FFFF+FFFF-]FFFF]FFFFFFFF[FFF+FFF-]FFF[FFF+FFFFFFF+F+FFFFF-]FF[FF+FF-]FF[FF+FFFFFF+F+FFFFF-]FFFF[-[FFFF+FFFF-]F[FFFF+FFFF-]F[FFFF+FFFF-]FF]FFF[-]F[F+F-]F[-[FFFF+FFFF-]FFFF]FFFFFFFF]FFFFFFFFFF++++++++++[F++++++++++[F[FF+FF-]FF[FF+FFFFF+++++++++++FFF-]F[F+F-]F[F+FFFF+FFF-]FFF[FFF+FFF-]FFF[FFF+FFFFF+FFFFFFFF-]FFFFFFFFF[FF+FF-]FF[FF+F+FFF-]FFF------------[FFF+FFF-]FFF[FFF+FFFFFFF+F+FFFFF-]FFFF[-[FFFF+FFFF-]F[FFFF+FFFF-]FFF]FFF[FFF+FFF-]FFF[FF+F+FFF-]FFFFFFF[FFF+FFF-]FFF[FFF+FFFFF+FF-]FFFFFFF[FFF+FFF-]FFF[FFF+FFFFFFFFF+FFFFFF-]FFFFFFF[-F[FFFF+FFFF-]F[FFFF+FFFF-]FFFF]F[FFFFFFF+FFFFFFF-]FFFFFFFFF+++++++++++[FFF+FFF-]FFF[FFF+FFFFFFF+F+FFFFF-]FFFF[-[FFFF+FFFF-]F[FFFF+FFFF-]FFF]FFF[FFF+FFF-]FFF[FF+F+FFF-]FFFFFFF[FFF+FFF-]FFF[FFF+FFFFF+FF-]FFFFFFF[FFF+FFF-]FFF[FFF+FFFFFFFFF+FFFFFF-]FFFFFFF[-F[FFFF+FFFF-]F[FFFF+FFFF-]FFFF]F[FFFFFFF+FFFFFFF-]FFFFFFFFF+++++++++++[FFFFFFF+F+FFFFFFFF-]FFFFFFF[-[FFFF+FFFF-]F[FFFF+FFFF-]FFF]FFF[FFF+FFF-]FFF[FF+F+FFF-]FFFFFFF[FFF+FFF-]FFF[FFF+FFFFF+FF-]FFFFFFF[FFF+FFF-]FFF[FFF+FFFFFFFFF+FFFFFF-]FFFFFFF[-F[FFFF+FFFF-]F[FFFF+FFFF-]FFFF]F[FFFFFFF+FFFFFFF-]FFFFFFF----[FFFFFFF+FFFFFFF+[FFFFFFF-FFFFFFF[-]]FFFFFFF[FFFFFFFFFFFF+F+FFFFFFFFFFFFF-][]FFFFFFFFFFFF[-[FFFF+FFFF-]F[FFFF+FFFF-]F[FFFF+FFFF-]FF]FFF[-]F[F+F-]F[-[FFFF+FFFF-]FFFF]FFFFFF[-]]FFFFFFF[-]FFFF-]F-]FFFFFFFFFFF[-]FF]FFFFFFFFFF]</textarea>
+                        </div>
+                    </div>
+                    <div class="row">
+                            <span class="label2">Angle</span>
+                            <input type="text" id="angle" value="60" size="4"/>
+                            <span class="label2">Scale</span>
+                            <input type="text" id="scale" value="20" size="4"/>
+                    </div>
+                    <div class="row center">
+                        <button type="button" name="button" onclick="render()">Render</button>
+                    </div>
+                </div>
+                <div class="col-60">
+                    <canvas id="canvas" height="700" width="700"></canvas>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
