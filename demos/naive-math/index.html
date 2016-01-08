@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html ng-app="naiveApp">
+
+<head>
+    <meta charset="utf-8">
+    <title>Naive Math</title>
+
+    <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css" media="screen" title="no title" charset="utf-8">
+    <link rel="stylesheet" href="style.css" media="screen" title="no title" charset="utf-8">
+
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=AM_HTMLorMML-full"></script>
+    <script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="gene.js"></script>
+    <script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js">
+    </script>
+    <script type="text/javascript" src="bower_components/bootstrap/dist/js/bootstrap.min.js">
+    </script>
+
+    <script type="text/javascript" src="bower_components/angular/angular.min.js">
+    </script>
+    <script type="text/javascript" src="app.js">
+    </script>
+
+</head>
+
+<body>
+
+    <div class="container" ng-controller="mainCtrl">
+        <div class="row expressions">
+            <div class="col-sm-5">
+                <div class="math-expr-holder text-right" mathjax-bind="leftExpr.mathExprEval">
+                </div>
+            </div>
+            <div class="col-sm-2">
+                <p class="text-center equal">=</p>
+            </div>
+            <div class="col-sm-5">
+                <div class="math-expr-holder text-left" mathjax-bind="rightExpr.mathExprEval">
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-5">
+            </div>
+            <div class="col-sm-2 text-center">
+                <button type="button" name="button" class="btn btn-default" ng-click="generate()">Generate</button>
+            </div>
+            <div class="col-sm-5">
+            </div>
+        </div>
+        <div class="row" ng-show="inProgress">
+            <div class="col-sm-5">
+            </div>
+            <div class="col-sm-2 text-center">
+                <span><b>Please wait...</b></span>
+            </div>
+            <div class="col-sm-5">
+            </div>
+        </div>
+        <div class="row padding-50" ng-show="leftExpr !== '?'">
+            <div class="col-sm-5 text-right">
+                <div class="eval-value">
+                    <b>Abs. Value:</b> {{absVal(leftExpr.eval)}}
+                </div>
+            </div>
+            <div class="col-sm-2 text-center">
+                <div class="row">
+                    <div class="eval-error">
+                        <b>Error:</b> {{rightExpr.error}}
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-5 text-left">
+                <div class="row">
+                    <div class="eval-value">
+                        <b>Abs. Value:</b> {{absVal(rightExpr.eval)}}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row padding-25" ng-show="leftExpr !== '?'">
+            <div class="col-sm-5 text-right">
+                <div class="row">
+                    <div ng-show="showAscii">
+                        {{leftExpr.strEval}}
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-2 text-center">
+                <div class="row">
+                    <button type="button" name="button" class="btn btn-normal" ng-click="showAscii = !showAscii">{{showAscii ? 'Hide' : 'As Text'}}</button>
+                </div>
+            </div>
+            <div class="col-sm-5 text-left">
+                <div class="row">
+                    <div ng-show="showAscii">
+                        {{rightExpr.strEval}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
