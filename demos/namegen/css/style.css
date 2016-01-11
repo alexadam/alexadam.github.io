@@ -1,0 +1,141 @@
+@font-face {
+    font-family: existence;
+    src: url(../fonts/Existence-Light.otf);
+}
+
+@font-face {
+    font-family: capsula;
+    src: url(../fonts/Capsuula.ttf);
+}
+
+* {
+    font-family: existence;
+
+}
+
+.row {
+    padding: 10px 0;
+}
+
+/*data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAEUlEQVQYlWNgIA5IjSqisyIA0EgBBS81/ewAAAAASUVORK5CYII=*/
+.showOutput {
+    text-align: center;
+    background:url(
+        data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAEUlEQVQYlWNgIA4YjyqisyIAlxIB/2n+IBUAAAAASUVORK5CYII=
+
+    ) repeat;
+    padding: 20px;
+}
+
+.showGenerated {
+    text-align: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    font-size: 50px;
+}
+
+.btn {
+    background-color: #eee;
+    color: black;
+}
+
+.entBtn {
+    background-color: #fff;
+    width: 100%;
+    text-align: left;
+}
+
+.entBtnRight {
+    background-color: #fff;
+    width: 100%;
+    text-align: right;
+}
+
+.entBtn:hover,
+.entBtnRight:hover {
+    background-color: #eee;
+    width: 100%;
+}
+
+.genBtn,
+.genBtn:focus,
+.genBtn:hover {
+    background-color: darkviolet;
+    color: white;
+    font-weight: bolder;
+    font-size: 15px;
+}
+
+.rndBtn {
+    text-align: center;
+    padding: 20px;
+}
+
+.white {
+    background-color: white;
+}
+
+a {
+    text-decoration: none;
+    color: black;
+    font-size: 50px;
+}
+
+.ent {
+    font-weight: bolder;
+    padding: 10px;
+    font-size: 20px;
+    margin-left: 3px;
+    width: 40px;
+    display: inline-block;
+    text-align: center;
+}
+
+.entRight {
+    font-weight: bolder;
+    padding: 10px;
+    font-size: 20px;
+    margin-left: 10px;
+    width: 40px;
+    display: inline-block;
+    text-align: center;
+}
+
+.cmd {
+    margin-right: 10px;
+}
+
+.j {
+    background-color: #61AE24;
+    color: white;
+}
+
+.a {
+    background-color: #E54028;
+    color: white;
+}
+
+.n {
+    background-color: #D0D102;
+    color: white;
+}
+
+.r {
+    background-color: #616161;
+    color: white;
+}
+
+.p {
+    background-color: #00A1CB;
+    color: white;
+}
+
+.c {
+    background-color: #113F8C;
+    color: white;
+}
+
+.v {
+    background-color: #F18D05;
+    color: white;
+}

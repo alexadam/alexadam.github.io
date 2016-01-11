@@ -1,0 +1,45 @@
+<div class="container" ng-controller="cvCtrl">
+    <div class="row text-center">
+        <div class="col-sm-6">
+            <a href="#/cv">Cons/Vows</a>
+        </div>
+        <div class="col-sm-6">
+            <a href="#/w">Words</a>
+        </div>
+    </div>
+    <div class="row text-center">
+        <div class="col-sm-5">
+            <button class="btn entBtnRight" ng-click="addCons()">Consonant<span class="entRight cmd c">C</span>
+            </button>
+        </div>
+        <div class="col-sm-2">
+            <button class="btn entBtn white rndBtn" ng-click="random()">?<br/>rAnDOm</button>
+        </div>
+        <div class="col-sm-5">
+            <button class="btn entBtn" ng-click="addVow()"><span class="ent cmd v">V</span>Vowel</button>
+        </div>
+    </div>
+    <div class="row text-center">
+        <div class="col-sm-12 showOutput">
+            <span ng-repeat="element in input" class="ent {{element.class}}">{{element.name | uppercase}}</span>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-6 text-center">
+            <button class="btn white" ng-click="clear()">Clear</button>
+        </div>
+        <div class="col-sm-6 text-center">
+            <button class="btn white" ng-click="removeLast()">&larr; Remove</button>
+        </div>
+    </div>
+    <div class="row text-center">
+        <div class="col-sm-12">
+            <button class="btn genBtn" ng-click="generate()">Generate</button>
+        </div>
+    </div>
+    <div class="row text-center">
+        <div class="col-sm-12 showGenerated">
+            <span>{{generated}}</span>
+        </div>
+    </div>
+</div>
