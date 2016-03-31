@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>A test</title>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+        <style media="screen">
+            * {
+                box-sizing: border-box;
+                padding: 0;
+                margin: 0;
+            }
+
+            #parent {
+            }
+
+            .img-col {
+                width: 200px;
+                height: 100%;
+                float: left;
+                margin-left: 10px;
+            }
+
+            .img-cell {
+                width: 200px;
+                min-width: 200px;
+                height: auto;
+                margin: 10px 0 0;
+                position: relative;
+            }
+
+            .img-cell img {
+                width: 100%;
+                height: auto;
+                max-height: 180px;
+            }
+
+            .img-cell-info {
+                visibility: hidden;
+                width: 100%;
+                color: white;
+                background-color: black;
+                position: absolute;
+                bottom: 0;
+                height: 0;
+                display: block;
+                transition: height 0.5s ease-out;
+                pointer-events: none;
+            }
+            .img-cell:hover .img-cell-info {
+                height: 50px;
+            }
+
+            .popUp {
+                display: none;
+                color: red;
+                position: fixed;
+                z-index: 999;
+                width: 100%;
+                height: 100%;
+                text-align: center;
+                top: 0;
+                left: 0;
+                background-color: rgba(0,0,0,0.8);
+                overflow: auto;
+            }
+            .popUp img {
+                width: 90%;
+                height: auto;
+                margin: 0 auto;
+            }
+            .popUpButton {
+                padding: 10px;
+                font-size: 20px;
+                position: fixed;
+            }
+            .popUpInfo {
+                display: block;
+                text-align: center;
+                font-size: 15px;
+                color: white;
+            }
+
+        </style>
+
+    </head>
+    <body>
+        <div id="lb" class="popUp" >
+            <img id="popUpimg" src="" alt=""/>
+            <button type="button" class="popUpButton" onclick="closeImgView()">Close</button>
+            <span id="popUpTitle" class="popUpInfo"></span>
+            <a id="popUpUrl" class="popUpInfo"></a>
+        </div>
+        <div id="parent"></div>
+
+        <script type="text/javascript">
+
+            var allImages = [];
+            var keyword = "airplanes";
+
+            var imgCellWidth = 200;
+            var winHeight = $(window).height();
+            var winWidth = $(window).width();
+            var docHeight = $(document).height();
+            var docWidth = $(document).width();
+            var parentHeight = $('#parent').height();
+            var parentWidth = $('#parent').width();
+            var nrCols = getNrOfCols();
+            var isScrolling = false;
+
+            getImages();
+            center();
+
+            function getImages() {
+                $.getJSON("http://api.flickr.com/services/feeds/photos_public.gne?jsoncallback=?", {
+                    tags: keyword,
+                    tagmode: "any",
+                    format: "json"
+                }, function(data) {
+
+                    for (var i = 0; i < 10; i++) {
+                        allImages = allImages.concat(data.items);
+                    }
+
+                    adaptiveDraw();
+
+                    isScrolling = false;
+                });
+            }
+
+            function adaptiveDraw(data) {
+                $('#parent').empty();
+                nrCols = getNrOfCols();
+
+                for (var i = 0; i < nrCols; i++) {
+                    $('#parent').append($('<div/>', {
+                        id: 'img-col-' + i,
+                        class: 'img-col'
+                    }));
+                }
+
+                for (var i = 0; i < allImages.length; i++) {
+                    var toCol = i % nrCols;
+                    var toColId = '#img-col-' + toCol;
+                    var imgTitle = allImages[i].title;
+
+                    $(toColId).append($('<div/>', {
+                        id: 'img-cell-' + i,
+                        class: 'img-cell'
+                    }));
+                    $('#img-cell-' + i).append($('<img />', {
+                        id: 'img-' + i,
+                        src: allImages[i]['media']['m'].replace("_m", "_b")
+                    }));
+                    $('#img-' + i).click(delegateStuff(viewImage, [imgTitle, allImages[i]['media']['m'].replace("_m", "_b")]));
+                    $('#img-cell-' + i).append($('<span />', {
+                        id: 'img-details-' + i,
+                        class: 'img-cell-info'
+                    }));
+                    $('#img-details-' + i).html(imgTitle.length > 20
+                        ? imgTitle.substring(0, 20) + '...'
+                        : imgTitle);
+                    $('#img-cell-' + i).mouseenter(delegateStuff(showDetails, [i]));
+                    $('#img-cell-' + i).mouseleave(delegateStuff(hideDetails, [i]));
+
+                }
+
+            }
+
+            function delegateStuff(targetFunc, args) {
+                return function() {
+                    targetFunc.apply(null, args);
+                }
+            }
+
+            function showDetails(index) {
+                $('#img-details-' + index).css('visibility', 'visible');
+            }
+            function hideDetails(index) {
+                $('#img-details-' + index).css('visibility', 'hidden');
+            }
+            function viewImage(name, url) {
+                $('#lb').css('display', 'block');
+                $('#popUpimg').attr('src', url);
+                $('#popUpTitle').html(name);
+                $('#popUpUrl').attr('href', url);
+                $('#popUpUrl').html(url);
+            }
+
+            $(document).ready(function() {
+                getImages();
+            });
+
+            $(window).resize(function() {
+                updateDimensions();
+                adaptiveDraw();
+                center();
+            });
+
+            $(window).scroll(function() {
+                updateDimensions();
+                if (!isScrolling) {
+                    if (winHeight + $(window).scrollTop() >= docHeight * 0.9) {
+                        isScrolling = true;
+                        getImages();
+                    }
+                }
+            });
+
+            function getNrOfCols() {
+                var tmp = Math.floor(docWidth / (imgCellWidth)) - 1;
+                return (tmp <= 0
+                    ? 1
+                    : tmp);
+            }
+
+            function updateDimensions() {
+                winHeight = $(window).height();
+                winWidth = $(window).width();
+                docHeight = $(document).height();
+                docWidth = $(document).width();
+                parentHeight = $('#parent').height();
+                parentWidth = $('#parent').width();
+            }
+
+            function center() {
+                $('#parent').css('margin-left', (((docWidth - nrCols * (imgCellWidth + imgCellWidth / 10)) / 2) + 'px'));
+            }
+
+            function closeImgView() {
+                $('#lb').css('display', 'none');
+            }
+        </script>
+    </body>
+</html>
