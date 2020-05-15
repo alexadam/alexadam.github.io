@@ -1,97 +1,83 @@
-<!DOCTYPE html>
-<html>
-
-<head>
-    <title>encode</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <link rel="stylesheet" href="css/style.css" />
-
-    <script src="js/jquery.min.js"></script>
-    <script src="js/riffwave.js"></script>
-    <script src="js/FileSave.js"></script>
-    <script src="js/engine.js"></script>
-
-    <script type="text/javascript">
-
-        $(document).ready(function() {
-            var fileLoaded = false;
-            var showPreview = false;
-            var showSettings = false;
-
-            $('#openButton').on('click', function () {
-                $( "#fileBrowser" ).trigger( "click" );
+<html><head><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="./beerslider//beerslider.css"></head><body><div class="container"><div class="first-page"><div class="big-title"><a id="logo-link" href="https://github.com/alexadam/img-encode">img-encode</a> Convert an image to sound spectrogram</div><div class="before-after"><div id="slider" class="beer-slider" data-beer-label=""><img class="before-after-img" src="./assets/mona-after.jpg"><div class="beer-reveal" data-beer-label=""><img class="before-after-img" src="./assets/mona-before.jpg"></div></div></div></div><div class="page"><button id="uploadImage" class="upload-image">Upload an image...</button> <input id="fileBrowser" type="file" name="name" value="" accept="image/*"><canvas id="canvas" class="invisible"></canvas><div class="label">Or select one:</div><div class="img-galery"><img id="galleryImg1" class="gallery-item" src="./assets/mona-before.jpg" alt=""> <img id="galleryImg2" class="gallery-item" src="./assets/fractal.jpg" alt=""> <img id="galleryImg3" class="gallery-item" src="./assets/lenna.png" alt=""></div><div id="settings" class="settings invisible"><div class="settings-row"><div class="control">Length in seconds: <input id="lengthInSeconds" type="number" class="nr-input" value="3" min="1" max="99"></div></div><span>&darr;</span> <button id="generateButton" class="inline-button">Convert...</button></div><div style="min-height:100px"></div></div><div id="previewPage" class="page invisible"><div class="test-box-container"><canvas id="spectrum-canvas" width="800px" height="600px"></canvas><div id="audioControls"></div><div id="play-icon"><div id="playButton" class="inline-button">Play></div></div></div><button id="download-link-container" class="inline-button">Download .WAV...</button><div class="footer"><div class="credits"><div class="credits-title">Credits</div><a href="http://www.ohmpie.com/imageencode/">OhmPie</a> <a href="https://academo.org/demos/spectrum-analyzer/">Academo</a> <a href="https://gist.github.com/hackNightly/3776503">riffwave.js</a> <a href="https://github.com/eligrey/FileSaver.js">FileSaver</a></div><div class="connect"><a href="https://github.com/alexadam/img-encode" class="connect-link"><img src="./assets/icons/github-64.png" alt="github"></a><a href="https://twitter.com/_alexadam" class="connect-link"><img src="./assets/icons/twitter.png" alt="twitter"></a><a href="https://dribbble.com/alexadam" class="connect-link"><img src="./assets/icons/dribbble.png" alt="dribbble"></a></div></div></div></div><div id="waitScreen" class="invisible"><div id="waitMessage">Please Wait...</div></div><script src="js/jquery.min.js"></script><script src="js/riffwave.js"></script><script src="js/FileSave.js"></script><script src="js/engine.js"></script><script src="./beerslider/beerslider.js"></script><script>new BeerSlider(document.getElementById("slider"),{start:"50",prefix:"beer"})</script><script type="text/javascript">
+$(document).ready(() => {
+            $('#uploadImage').on('click', () => {
+                $("#fileBrowser").trigger("click");
             });
 
-            $('#fileBrowser').on('change', function() {
-                var filePath = $(this).val();
+            $('#fileBrowser').on('change', () => {
+                resetImgSelection()
+                resetPlayFlow()
+
+                $('#lengthInSeconds').val('3')
+
+                let filePath = $(this).val();
                 loadCanvas($('#fileBrowser')[0].files[0]);
-                $('#content').toggleClass('invisible');
-                $('#imgNameLabel').toggleClass('invisible');
-                $("#openButton").html('Change Image');
-                $("#imgNameLabel").html(filePath);
+                $("#settings").removeClass('invisible')
             });
 
-            $('#previewButton').on('click', function () {
-                showPreview = !showPreview;
-                $("#previewButton").html(showPreview ? 'Hide Preview' : 'Preview Image');
-                $('#canvas').toggleClass('invisible');
-            });
+            $('#generateButton').on('click', () => {
+                showLoading()
+                resetPlayFlow()
 
-            $('#settingButton').on('click', function () {
-                showSettings = !showSettings;
-                $("#settingButton").html(showSettings ? 'Hide Settings' : 'Settings');
-                $('#moreSettings').toggleClass('invisible');
-            });
-
-            $('#generateButton').on('click', function () {
                 $('#progressImg').toggleClass('invisible');
-                setTimeout(function () {
+
+                setTimeout(() => {
                     getImageData();
                     $('#progressImg').toggleClass('invisible');
                 }, 100);
 
             });
 
-        });
-    </script>
-</head>
+            $('#galleryImg1').on('click', () => {
+                resetImgSelection()
+                $('#lengthInSeconds').val('3')
+                $('#galleryImg1').addClass('img-selected')
+                loadCanvasFromExampleFiles($('#galleryImg1').attr('src'))
+                $("#settings").removeClass('invisible')
+                window.scrollTo(0, 300 + window.scrollY);
+            })
 
-<body>
-    <div id="container">
-            <div class="row">
-                <span id="imgNameLabel" class="invisible"></span>
-                <button id="openButton"  class="action-button" type="button" name="button">Open Image...</button>
-                <input id="fileBrowser" type="file" name="name" value="" accept="image/*">
-            </div>
-            <div id="content" class="invisible">
-                <div class="row">
-                    <button id="previewButton" type="button" name="button">Preview Image</button>
-                    <button id="settingButton" type="button" name="button">Settings</button>
-                </div>
-                <div class="row">
-                    <canvas id="canvas" class="invisible">
-                    </canvas>
-                </div>
-                <div id="moreSettings" class="row invisible">
-                    <label>yFactor:</label>
-                    <input id="yFactor" type="number" name="yFactor" value="2" />
-                    <label>Length (seconds):</label>
-                    <input id="length" type="number" name="length" value="3" />
-                    <label>Max. Frequency (Hz):</label>
-                    <input id="maxFreq" type="number" name="maxFreq" value="20000" />
-                </div>
-                <div class="row">
-                    <button id="generateButton" class="action-button">Encode</button>
-                    <br>
-                    <div id="progressImg" class="invisible">
-                        <span>Please Wait...</span>
-                        <div id="progressImg" class="loader"></div>
-                    </div>
-                </div>
-            </div>
-    </div>
-</body>
+            $('#galleryImg2').on('click', () => {
+                resetImgSelection()
+                $('#lengthInSeconds').val('6')
+                $('#galleryImg2').addClass('img-selected')
+                loadCanvasFromExampleFiles($('#galleryImg2').attr('src'))
+                $("#settings").removeClass('invisible')
+                window.scrollTo(0, 300 + window.scrollY);
+            })
 
-</html>
+            $('#galleryImg3').on('click', () => {
+                resetImgSelection()
+                $('#lengthInSeconds').val('5')
+                $('#galleryImg3').addClass('img-selected')
+                loadCanvasFromExampleFiles($('#galleryImg3').attr('src'))
+                $("#settings").removeClass('invisible')
+                window.scrollTo(0, 300 + window.scrollY);
+            })
+
+            function resetImgSelection() {
+                $('#galleryImg1').removeClass('img-selected')
+                $('#galleryImg2').removeClass('img-selected')
+                $('#galleryImg3').removeClass('img-selected')
+            }
+
+            $('#play-icon').on('click', () => {
+                playFlow()
+            })
+            $('#playButton').on('click', () => {
+                playFlow()
+            })
+
+            function playFlow() {
+                $('#play-icon').addClass('invisible')
+                $('#playButton').addClass('invisible')
+                document.getElementById('audioPlayer').play()
+            }
+
+            function resetPlayFlow() {
+                $('#play-icon').removeClass('invisible')
+                $('#playButton').removeClass('invisible')
+                $('#previewPage').addClass('invisible')
+            }
+
+        });</script></body></html>
