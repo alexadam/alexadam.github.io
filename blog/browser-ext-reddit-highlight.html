@@ -1,0 +1,950 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    
+    <head>
+    
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-55MTXHSJDQ"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+    
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag('js', new Date());
+            gtag('config', 'G-55MTXHSJDQ');
+        </script>
+    
+        <title>A Browser Extension to highlight your favorite music genres on r/ListenToThis</title>
+        <meta name="description" content="A Browser Extension to highlight your favorite music genres on reddit r/ListenToThis">
+        <meta name="keywords" content="browser extension, chrome extension, music, highlight, js, extension, firefox, chrome, new music">
+        <meta name=”robots” content="index, follow">
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+        <link rel="stylesheet" href="../style.css">
+
+        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/railscasts.min.css">
+    </head>
+    
+    <body>
+        <nav class="header">
+            <div class="small-container menu">
+                <a class="header-link" href="../index.html">Home</a>
+                <a class="header-link" href="../projects/index.html">Projects</a>
+                <a class="header-link" href="../blog/index.html">Blog</a>
+                <a class="header-link" href="../contact.html">Contact</a>
+            </div>
+        </nav>
+    
+        <article>
+   <h1>A Browser Extension to highlight your favorite music on r/ListenToThis</h1>
+<p>When I want to discover new and overlooked music, I go to <a href="https://www.reddit.com/r/listentothis/">https://www.reddit.com/r/listentothis/</a>. Because there are a lot of new songs added every day, I need a way to quickly find my favorite genres. Fortunately, each post contains the genre info in its title so... I built a browser extension that highlights with different colors the posts containing some keywords (genres):</p>
+<p><img src="./assets/browser-ext-highlight/browser-ext-highlight-overview.jpg" alt="how to make a browser extension - overview"></p>
+<p>You can find the full source code here: <a href="https://github.com/alexadam/ListenToThis-Highlight">https://github.com/alexadam/ListenToThis-Highlight</a></p>
+<h2>How to make a Browser Extension</h2>
+<div class="row">
+<p>Create a folder named <strong>music-highlight</strong>. This will be the root folder of the extension:</p>
+<pre><code class="language-sh">mkdir music-highlight
+cd music-highlight
+</code></pre>
+</div>
+<p>Each browser extension must have a manifest file containing metadata like: author's name, description, permissions, license, what scripts are included etc. You can find more details about it here: <a href="https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json">https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json</a></p>
+<div class="row">
+<p>Create a file <code>manifest.json</code> and paste:</p>
+<pre><code class="language-json">{
+  &quot;manifest_version&quot;: 2,
+  &quot;name&quot;: &quot;music-highlight&quot;,
+  &quot;version&quot;: &quot;1&quot;,
+  &quot;author&quot;: &quot;Your Name&quot;,
+  &quot;homepage_url&quot;: &quot;https://www.reddit.com/r/listentothis/&quot;,
+  &quot;description&quot;: &quot;Highlight your favorite music genres on r/ListenToThis&quot;,
+  &quot;content_scripts&quot;: [{
+    &quot;matches&quot;: [&quot;*://*.reddit.com/r/listentothis*&quot;],
+    &quot;js&quot;: [&quot;colors.js&quot;]
+  }],
+  &quot;permissions&quot;: [
+    &quot;activeTab&quot;,
+    &quot;https://www.reddit.com/r/listentothis/&quot;,
+    &quot;https://old.reddit.com/r/listentothis/&quot;,
+    &quot;storage&quot;
+  ]
+}
+</code></pre>
+</div>
+<p>In the <strong>content_scripts</strong> section we tell Chrome or Firefox to run <strong>colors.js</strong> on the web pages whose URL matches that regex pattern - in our case both old &amp; new reddit.</p>
+<p>By injecting <strong>color.js</strong> in the Reddit's page, we can access and modify its content using the standard DOM APIs (change colors, add new HTML elements etc). More about the content scripts: <a href="https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts">https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts</a></p>
+<p>How <strong>color.js</strong> works:</p>
+<ul>
+<li>for each post on the page</li>
+<li>get the post's title &amp; url</li>
+<li>if the title contains a genre on your list</li>
+<li>change its background color</li>
+</ul>
+<p>How do we find a find a post? Right click on it -&gt; Inspect element. We'll get all the HTML elements containing the <em>scrollerElement</em> class or the <em>thing</em> class, on the old Reddit.</p>
+<p><img src="./assets/browser-ext-highlight/browser-ext-find-elem.jpg" alt="how to make a browser extension - find element"></p>
+<div class="row">
+<p>Let's create a file <code>colors.js</code> then add the function that returns all posts:</p>
+<pre><code class="language-js">const getAllPosts = () =&gt; {
+  // old reddit
+  const allPosts = document.getElementsByClassName('thing');
+  if (allPosts.length === 0) {
+    // new reddit
+    return document.getElementsByClassName('scrollerItem');
+  }
+  return allPosts
+}
+</code></pre>
+</div>
+<div class="row">
+<p>Then, create a function that extracts the title:</p>
+<pre><code class="language-js">const getTitle = (post) =&gt; {
+  // old reddit
+  const titleElem = post.querySelector('a.title');
+  // new reddit
+  if (!titleElem) {
+    return post.querySelector('h3');
+  }
+  return titleElem
+}
+</code></pre>
+</div>
+<div class="row">
+<p>The title format is like <code>Band - Song [genre1/genre2, genre3] (2020)</code> and we only need what's inside the square brackets:</p>
+<pre><code class="language-js">const getGenresAsString = (titleElem) =&gt; {
+  const text = titleElem.innerText.toLowerCase()
+
+  // Extract the genres from the title 
+  const genresRegex = /\[([^\]]+)\]/g
+  const match = genresRegex.exec(text)
+
+  // Skip over posts that are not properly formatted
+  if (!match) {
+    return null
+  }
+  return match[0]
+}
+</code></pre>
+</div>
+<div class="row">
+<p>Add a list with our favorite genres and some colors:</p>
+<pre><code class="language-js">const favoriteGenres = {
+  'ambient': '#fa8335',
+  'blues': '#0df9f9',
+  'country': '#fad337',
+  'chill': '#a8f830',
+  'funk': '#F2EF0C',
+  'jazz': '#fba19d',
+  'soul': '#aca2bb',
+}
+</code></pre>
+</div>
+<div class="row">
+<p>Then, create a function that will iterate through all of our fav. genres defined in the list above. If a genre is mentioned in the string returned by <code>getGenresAsString</code>, the function returns its color (or the color of the last one matched, if there are multiple matches).</p>
+<pre><code class="language-js">const getBGColor = (allGenresStr, favGenres) =&gt; {
+  let bgColor = null
+
+  // Test if the post contains any of our fav. genres
+  for (const genre of Object.keys(favGenres)) {
+    const genreRegex = new RegExp('.*' + genre + '.*', &quot;i&quot;)
+    if (!genreRegex.test(allGenresStr)) {
+      continue
+    }
+    bgColor = 'background-color: ' + favGenres[genre] + ' !important'
+  }
+
+  return bgColor
+}
+</code></pre>
+</div>
+<div class="row">
+<p>Before trying it, there is another problem we have to solve... the <em>new</em> Reddit loads the content dynamically and, at the time <strong>color.js</strong> runs on the page, there is no useful data.<br/><br>
+Moreover, when you scroll down, new content is added and we have to reapply the logic on it and update the colors. So we need a <em>new content</em> listener that will trigger the code:</p>
+<pre><code class="language-js">const observeDOM = (() =&gt; {
+  const MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
+  const eventListenerSupported = window.addEventListener;
+
+  return (obj, callback) =&gt; {
+    if (MutationObserver) {
+      const obs = new MutationObserver((mutations, observer) =&gt; {
+        if (mutations[0].addedNodes.length)
+          callback(mutations[0].addedNodes);
+      });
+      obs.observe(obj, {
+        childList: true,
+        subtree: true
+      });
+    } else if (eventListenerSupported) {
+      obj.addEventListener('DOMNodeInserted', callback, false);
+      obj.addEventListener('DOMNodeRemoved', callback, false);
+    }
+  };
+
+})();
+
+// detect if on the new Reddit before the content is loaded
+const targetElem = document.getElementById('2x-container')
+if (targetElem) {
+  observeDOM(targetElem, (addedNodes) =&gt; {
+    // whenever new content is added
+    addColorsOnSongs(favoriteGenres);
+  });
+}
+</code></pre>
+</div>
+<div class="row expand" onclick="expand(event)">
+<p>After we put everything together, <strong>color.js</strong> will look like this:</p>
+<pre><code class="language-js">const favoriteGenres = {
+  'ambient': '#fa8335',
+  'blues': '#0df9f9',
+  'country': '#fad337',
+  'chill': '#a8f830',
+  'funk': '#F2EF0C',
+  'jazz': '#fba19d',
+  'soul': '#aca2bb',
+}
+
+const getAllPosts = () =&gt; {
+  // old reddit
+  const allPosts = document.getElementsByClassName('thing');
+  if (allPosts.length === 0) {
+    // new reddit
+    return document.getElementsByClassName('scrollerItem');
+  }
+  return allPosts
+}
+
+const getTitle = (post) =&gt; {
+  // old reddit
+  const titleElem = post.querySelector('a.title');
+  // new reddit
+  if (!titleElem) {
+    return post.querySelector('h3');
+  }
+  return titleElem
+}
+
+const getGenresAsString = (titleElem) =&gt; {
+  const text = titleElem.innerText.toLowerCase()
+
+  // Extract the genres from the title 
+  const genresRegex = /\[([^\]]+)\]/g
+  const match = genresRegex.exec(text)
+
+  // Skip over posts that are not properly formatted
+  if (!match) {
+    return null
+  }
+  return match[0]
+}
+
+
+const getBGColor = (allGenresStr, favGenres) =&gt; {
+  let bgColor = null
+
+  // Test if the post contains any of our fav. genres
+  for (const genre of Object.keys(favGenres)) {
+    const genreRegex = new RegExp('.*' + genre + '.*', &quot;i&quot;)
+    if (!genreRegex.test(allGenresStr)) {
+      continue
+    }
+    bgColor = 'background-color: ' + favGenres[genre] + ' !important'
+  }
+
+  return bgColor
+}
+
+const changePostColor = (post, bgColor) =&gt; {
+  post.setAttribute('style', bgColor);
+    for (let child of post.children) {
+      child.setAttribute('style', bgColor);
+      for (let child2 of child.children) {
+        child2.setAttribute('style', bgColor);
+      }
+    }
+}
+
+const addColorsOnSongs = (colorData) =&gt; {
+  const allPosts = getAllPosts();
+
+  for (const post of allPosts) {
+
+    const titleElem = getTitle(post)
+
+    if (!titleElem) continue
+
+    const genresStr = getGenresAsString(titleElem)
+    const bgColor = getBGColor(genresStr, favoriteGenres)
+
+    if (!bgColor) continue
+
+    // Change the post's &amp; its children bg color
+    changePostColor(post, bgColor)
+
+  }
+
+}
+
+addColorsOnSongs(favoriteGenres)
+
+const observeDOM = (() =&gt; {
+  const MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
+  const eventListenerSupported = window.addEventListener;
+
+  return (obj, callback) =&gt; {
+    if (MutationObserver) {
+      const obs = new MutationObserver((mutations, observer) =&gt; {
+        if (mutations[0].addedNodes.length)
+          callback(mutations[0].addedNodes);
+      });
+      obs.observe(obj, {
+        childList: true,
+        subtree: true
+      });
+    } else if (eventListenerSupported) {
+      obj.addEventListener('DOMNodeInserted', callback, false);
+      obj.addEventListener('DOMNodeRemoved', callback, false);
+    }
+  };
+
+})();
+
+// detect if on the new Reddit before the content is loaded
+const targetElem = document.getElementById('2x-container')
+if (targetElem) {
+  observeDOM(targetElem, (addedNodes) =&gt; {
+    addColorsOnSongs(favoriteGenres);
+  });
+}
+</code></pre>
+</div>
+<p>Let's test it...</p>
+<p>On <strong>Chrome</strong>:</p>
+<ul>
+<li>Navigate to <strong>chrome://extensions</strong></li>
+<li>Toggle <strong>Developer Mode</strong> (top right)</li>
+<li>click on Load Unpacked</li>
+<li>Select the extension's folder <strong>music-highlight</strong></li>
+<li>click Open</li>
+</ul>
+<p>On <strong>Firefox</strong>:</p>
+<ul>
+<li>Navigate to <strong>about:debugging</strong></li>
+<li>click on <strong>This Firefox</strong> (top left)</li>
+<li>click on <strong>Load Temporary Add-on</strong></li>
+<li>go to the extension's folder</li>
+<li>select <strong>manifest.json</strong></li>
+<li>click Open</li>
+</ul>
+<p>Then visit <a href="https://old.reddit.com/r/listentothis/">https://old.reddit.com/r/listentothis/</a> and you should see:</p>
+<p><img src="./assets/browser-ext-highlight/browser-ext-old-reddit-colors.jpg" alt="how to make a browser extension - old reddit colors"></p>
+<p>and <a href="https://www.reddit.com/r/listentothis/">https://www.reddit.com/r/listentothis/</a></p>
+<p><img src="assets/browser-ext-highlight/browser-ext-new-reddit-colors.jpg" alt="how to make a browser extension - new reddit colors"></p>
+<h2>Solving an UX Problem</h2>
+<p>Although highlighting with different colors makes it easier to find interesting music on that list, we can still improve it. I want to add an element that displays the genres with a bigger font and, when you click on it, you go directly to the linked song - instead of opening the reddit comments page.</p>
+<p>So, if a post contains at least one of my fav. genres:</p>
+<ul>
+<li>create a hyperlink HTML Element</li>
+<li>with the href pointing to the source</li>
+<li>and all the matched genres as the inner text</li>
+<li>then append it to the reddit's post</li>
+</ul>
+<div class="row">
+<p>Let start by adding some useful functions - <strong>getSongURL</strong> extracts the source URL from the post:</p>
+<pre><code class="language-js">const getSongURL = (titleElem, post) =&gt; {
+  // old reddit
+  let href = titleElem.href
+  // new reddit
+  if (!href) {
+    const extLink = post.querySelector('a.styled-outbound-link')
+    if (extLink) {
+      return extLink.href
+    }
+  }
+  return href
+}
+</code></pre>
+</div>
+<div class="row">
+<p>And <strong>createSongLink</strong> creates the HTML Element:</p>
+<pre><code class="language-js">const createSongLink = (titleElem, post, genresText) =&gt; {
+  post.style.position = 'relative'
+  let linkElem = document.createElement('a')
+  linkElem.className = &quot;favGenresLink&quot;
+  linkElem.style.position = 'absolute'
+  linkElem.style.right = '20px'
+  linkElem.style.bottom = '0'
+  linkElem.style.height = '50px'
+  linkElem.style.color = 'black'
+  linkElem.style.fontSize = '50px'
+  linkElem.style.zIndex = '999999'
+  linkElem.innerText = genresText
+  linkElem.href = getSongURL(titleElem, post)
+  return linkElem
+}
+</code></pre>
+</div>
+<div class="row">
+<p>Modify <strong>getBGColor</strong> to return both the colors and all the matched genres, as text:</p>
+<pre><code class="language-js">const getBGColor = (allGenresStr, favGenres) =&gt; {
+  let bgColor = null
+  let favGenresStr = ''
+
+  // Test if the post contains any of our fav. genres
+  for (const genre of Object.keys(favGenres)) {
+    const genreRegex = new RegExp('.*' + genre + '.*', &quot;i&quot;)
+    if (!genreRegex.test(allGenresStr)) {
+      continue
+    }
+    bgColor = 'background-color: ' + favGenres[genre] + ' !important'
+    favGenresStr += genre + ' '
+  }
+
+  return {bgColor, favGenresStr}
+}
+</code></pre>
+</div>
+<div class="row">
+<p>Update <strong>addColorsOnSongs</strong>:</p>
+<pre><code class="language-js">const addColorsOnSongs = (colorData) =&gt; {
+  const allPosts = getAllPosts();
+
+  for (const post of allPosts) {
+
+    // Ingnore this post if it already
+    // contains a favGenresLink
+    let colorObj = post.querySelector('a.favGenresLink');
+    if (colorObj) continue
+
+    const titleElem = getTitle(post)
+
+    if (!titleElem) continue
+
+    const genresStr = getGenresAsString(titleElem)
+    const {bgColor, favGenresStr} = getBGColor(genresStr, favoriteGenres)
+
+    if (!bgColor) continue
+
+    // Change the post's &amp; its children bg color
+    changePostColor(post, bgColor)
+
+    // Create the genres link and add it to the post
+    const linkElem = createSongLink(titleElem, post, favGenresStr)
+    post.insertAdjacentElement('afterbegin', linkElem)
+  }
+
+}
+</code></pre>
+</div>
+<p>Each new HTML Element we add will trigger the <em>new content</em> listener created earlier (to update the colors on dynamic content). <br/><br>
+To avoid an infinite loop - new content listener -&gt; addColors() -&gt; create &amp; add genres link -&gt; trigger new content listener - we must add a condition:</p>
+<pre><code class="language-js">if (targetElem) {
+  observeDOM(targetElem, (addedNodes) =&gt; {
+    // ignore favGenresLink to avoid an infinite loop
+    for (let addedNode of addedNodes) {
+      if (addedNode.classList.contains('favGenresLink')) {
+        return
+      }
+    }
+
+    // whenever new content is added
+    addColorsOnSongs(favoriteGenres);
+  });
+}
+</code></pre>
+<p><img src="assets/browser-ext-highlight/browser-ext-genres.jpg" alt="how to make a browser extension - genres"></p>
+<div class="row expand" onclick="expand(event)">
+<p>This is the <strong>colors.js</strong> file with all the updates:</p>
+<pre><code class="language-js">const favoriteGenres = {
+  'ambient': '#fa8335',
+  'blues': '#0df9f9',
+  'country': '#fad337',
+  'chill': '#a8f830',
+  'funk': '#F2EF0C',
+  'jazz': '#fba19d',
+  'soul': '#aca2bb',
+}
+
+const getAllPosts = () =&gt; {
+  // old reddit
+  const allPosts = document.getElementsByClassName('thing');
+  if (allPosts.length === 0) {
+    // new reddit
+    return document.getElementsByClassName('scrollerItem');
+  }
+  return allPosts
+}
+
+const getTitle = (post) =&gt; {
+  // old reddit
+  const titleElem = post.querySelector('a.title');
+  // new reddit
+  if (!titleElem) {
+    return post.querySelector('h3');
+  }
+  return titleElem
+}
+
+const getGenresAsString = (titleElem) =&gt; {
+  const text = titleElem.innerText.toLowerCase()
+
+  // Extract the genres from the title 
+  const genresRegex = /\[([^\]]+)\]/g
+  const match = genresRegex.exec(text)
+
+  // Skip over posts that are not properly formatted
+  if (!match) {
+    return null
+  }
+  return match[0]
+}
+
+
+const getBGColor = (allGenresStr, favGenres) =&gt; {
+  let bgColor = null
+  let favGenresStr = ''
+
+  // Test if the post contains any of our fav. genres
+  for (const genre of Object.keys(favGenres)) {
+    const genreRegex = new RegExp('.*' + genre + '.*', &quot;i&quot;)
+    if (!genreRegex.test(allGenresStr)) {
+      continue
+    }
+    bgColor = 'background-color: ' + favGenres[genre] + ' !important'
+    favGenresStr += genre + ' '
+  }
+
+  return {bgColor, favGenresStr}
+}
+
+const changePostColor = (post, bgColor) =&gt; {
+  post.setAttribute('style', bgColor);
+  for (let child of post.children) {
+    child.setAttribute('style', bgColor);
+    for (let child2 of child.children) {
+      child2.setAttribute('style', bgColor);
+    }
+  }
+}
+
+const getSongURL = (titleElem, post) =&gt; {
+  // old reddit
+  let href = titleElem.href
+  // new reddit
+  if (!href) {
+    const extLink = post.querySelector('a.styled-outbound-link')
+    if (extLink) {
+      return extLink.href
+    }
+  }
+  return href
+}
+
+const createSongLink = (titleElem, post, genresText) =&gt; {
+  post.style.position = 'relative'
+  let linkElem = document.createElement('a')
+  linkElem.className = &quot;favGenresLink&quot;
+  linkElem.style.position = 'absolute'
+  linkElem.style.right = '20px'
+  linkElem.style.bottom = '0'
+  linkElem.style.height = '50px'
+  linkElem.style.color = 'black'
+  linkElem.style.fontSize = '50px'
+  linkElem.style.zIndex = '999999'
+  linkElem.innerText = genresText
+  linkElem.href = getSongURL(titleElem, post)
+  return linkElem
+}
+
+const addColorsOnSongs = (colorData) =&gt; {
+  const allPosts = getAllPosts();
+
+  for (const post of allPosts) {
+
+    // ignore
+    let colorObj = post.querySelector('a.favGenresLink');
+    if (colorObj) continue //TODO
+
+    const titleElem = getTitle(post)
+
+    if (!titleElem) continue
+
+    const genresStr = getGenresAsString(titleElem)
+    const {bgColor, favGenresStr} = getBGColor(genresStr, favoriteGenres)
+
+    if (!bgColor) continue
+
+    // Change the post's &amp; its children bg color
+    changePostColor(post, bgColor)
+
+    // Create the genres link and add it to the post
+    const linkElem = createSongLink(titleElem, post, favGenresStr)
+    post.insertAdjacentElement('afterbegin', linkElem)
+  }
+
+}
+
+addColorsOnSongs(favoriteGenres)
+
+
+const observeDOM = (() =&gt; {
+  const MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
+  const eventListenerSupported = window.addEventListener;
+
+  return (obj, callback) =&gt; {
+    if (MutationObserver) {
+      const obs = new MutationObserver((mutations, observer) =&gt; {
+        if (mutations[0].addedNodes.length)
+          callback(mutations[0].addedNodes);
+      });
+      obs.observe(obj, {
+        childList: true,
+        subtree: true
+      });
+    } else if (eventListenerSupported) {
+      obj.addEventListener('DOMNodeInserted', callback, false);
+      obj.addEventListener('DOMNodeRemoved', callback, false);
+    }
+  };
+
+})();
+
+// detect if on the new Reddit before the content is loaded
+const targetElem = document.getElementById('2x-container')
+if (targetElem) {
+  observeDOM(targetElem, (addedNodes) =&gt; {
+    // ignore favGenresLink to avoid an infinite loop
+    for (let addedNode of addedNodes) {
+      if (addedNode.classList.contains('favGenresLink')) {
+        return
+      }
+    }
+
+    // whenever new content is added
+    addColorsOnSongs(favoriteGenres);
+  });
+}
+</code></pre>
+</div>
+</div>
+<h2>Custom genres and colors</h2>
+<p>Now, the favorite genres are stored as a list, in the source code. Let's change this and create a settings page where you can define your own favorite genres, dynamically.</p>
+<div class="row">
+<p>First, we have to update <code>manifest.json</code> and specify the options page:</p>
+<pre><code class="language-json">...
+  &quot;options_page&quot;: &quot;options.html&quot;,
+  &quot;options_ui&quot;: {
+    &quot;page&quot;: &quot;options.html&quot;
+  }
+...
+</code></pre>
+</div>
+<div class="row">
+<p>Create the file <strong>options.html</strong>:</p>
+<pre><code class="language-html">&lt;html&gt;
+  &lt;head&gt;&lt;/head&gt;
+  &lt;body&gt;
+    &lt;h1&gt;Music Highlight Options&lt;/h1&gt;
+
+    &lt;div id=&quot;root&quot;&gt;
+      &lt;div id=&quot;container&quot;&gt;
+      &lt;/div&gt;
+      &lt;button id=&quot;add&quot; class=&quot;button&quot; type=&quot;button&quot; name=&quot;button&quot;&gt;Add genre&lt;/button&gt;
+      &lt;hr /&gt;
+      &lt;div id=&quot;buttons&quot;&gt;
+          &lt;button id=&quot;save&quot; class=&quot;button&quot; type=&quot;button&quot; name=&quot;button&quot;&gt;Save&lt;/button&gt;
+          &lt;div id=&quot;status&quot;&gt;&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;script src=&quot;options.js&quot;&gt;&lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+</div>
+<div class="row">
+<p>And <strong>options.js</strong>...</p>
+<pre><code class="language-js">const defaultGenres = {
+  'ambient': '#fa8335',
+  'blues': '#0df9f9',
+  'country': '#fad337',
+  'chill': '#a8f830',
+  'funk': '#F2EF0C',
+  'jazz': '#fba19d',
+  'soul': '#aca2bb',
+}
+
+const restoreOptions = () =&gt; {
+  chrome.storage.local.get('colors', (data) =&gt; {
+    if (!data 
+        || Object.keys(data).length === 0 
+      || Object.keys(data.colors).length === 0) {
+      createColorsUI(defaultGenres);
+    } else {
+      createColorsUI(data.colors);
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', restoreOptions);
+</code></pre>
+</div>
+<div class="row">
+<p>Add a function that creates the genre's color inputs:</p>
+<pre><code class="language-js">const createColorInput = (genre, color, id) =&gt; {
+  let genreInputLabel = document.createElement('span')
+  genreInputLabel.innerText = 'Genre:'
+  genreInputLabel.className = 'genreNameLabel'
+  let genreInput = document.createElement('input')
+  genreInput.className = 'genreName'
+  genreInput.type = 'text'
+  genreInput.value = genre
+  let colorInputLabel = document.createElement('span')
+  colorInputLabel.innerText = 'Color:'
+  colorInputLabel.className = 'colorNameLabel'
+  let colorInput = document.createElement('input')
+  colorInput.className = 'colorName'
+  colorInput.type = 'color'
+  colorInput.value = color
+  let removeButton = document.createElement('button')
+  removeButton.innerText = 'Remove'
+  removeButton.className = 'removeButton button'
+  removeButton.addEventListener('click', ((e) =&gt; {
+    let tmpElem = document.getElementById(e.target.parentElement.id)
+    if (tmpElem &amp;&amp; tmpElem.parentElement) {
+      tmpElem.parentElement.removeChild(tmpElem)
+    }
+  }))
+
+  let group = document.createElement('div')
+  group.id = 'data' + id
+  group.className = 'genreColorGroup'
+  group.appendChild(genreInputLabel)
+  group.appendChild(genreInput)
+  group.appendChild(colorInputLabel)
+  group.appendChild(colorInput)
+  group.appendChild(removeButton)
+
+  let container = document.getElementById('container')
+  container.appendChild(group)
+}
+</code></pre>
+</div>
+<div class="row">
+<p>Next, the function <strong>createColorsUI</strong></p>
+<pre><code class="language-js">const createColorsUI = (data) =&gt; {
+  let index = 0
+  for (let variable in data) {
+    if (data.hasOwnProperty(variable)) {
+      createColorInput(variable, data[variable], index)
+      index++
+    }
+  }
+}
+</code></pre>
+</div>
+<div class="row">
+<p>and the <strong>addOption</strong> function:</p>
+<pre><code class="language-js">const addOption = () =&gt; {
+  let index = Math.floor(Math.random() * 1000000)
+  createColorInput('misc', '#000000', index)
+}
+
+document.getElementById('add').addEventListener('click', addOption);
+</code></pre>
+</div>
+<div class="row">
+<p>Save the changes to <strong>chrome.storage.local</strong>:</p>
+<pre><code class="language-js">const saveOptions = () =&gt; {
+  let allGenreNames = document.getElementsByClassName('genreName')
+  let allColorNames = document.getElementsByClassName('colorName')
+
+  let data = {}
+
+  for (let i = 0; i &lt; allGenreNames.length; i++) {
+    let name = allGenreNames[i].value
+    let color = allColorNames[i].value
+    data[name] = color
+  }
+
+  chrome.storage.local.set({
+    colors: data
+  }, () =&gt; {
+    let status = document.getElementById('status');
+    status.textContent = 'Options saved.';
+    setTimeout(() =&gt; {
+      status.textContent = '';
+    }, 2750);
+  });
+}
+
+document.getElementById('save').addEventListener('click', saveOptions);
+</code></pre>
+</div>
+<p>How to open the Options page on <strong>Chrome</strong>:</p>
+<ul>
+<li>click on the <strong>Extesions</strong> button, on the toolbar</li>
+<li>click on <em>music-highligt</em>'s <strong>More Actions</strong> menu</li>
+<li>click on <strong>Options</strong></li>
+</ul>
+<p><img src="./assets/browser-ext-highlight/browser-ext-chrome-options.jpg" alt="how to make a browser extension - options on Chrome"></p>
+<p>And on <strong>Firefox</strong>:</p>
+<ul>
+<li>click on the extension's icon, on the toolbar</li>
+<li>click on <strong>Manage Extension</strong></li>
+<li>go to the <strong>Preferences</strong> menu</li>
+</ul>
+<p><img src="./assets/browser-ext-highlight/browser-ext-ff-options.jpg" alt="how to make a browser extension - options on Firefox"></p>
+<h2>Last part</h2>
+<p>Next, to make it work, we have to link the saved options to the highlight code:</p>
+<div class="row">
+<p>Open <strong>colors.js</strong> and replace:</p>
+<pre><code class="language-js">addColorsOnSongs(favoriteGenres)
+</code></pre>
+</div>
+<div class="row">
+<p>with:</p>
+<pre><code class="language-js">chrome.storage.local.get('colors', (data) =&gt; {
+  if (!data || Object.keys(data).length === 0 || Object.keys(data.colors).length === 0) {
+      addColorsOnSongs(favoriteGenres);
+  } else {
+    console.log(data)
+      addColorsOnSongs(data.colors);
+  }
+});
+</code></pre>
+</div>
+<div class="row">
+<p>and update:</p>
+<pre><code class="language-js">// detect if on the new Reddit before the content is loaded
+const targetElem = document.getElementById('2x-container')
+if (targetElem) {
+  observeDOM(targetElem, (addedNodes) =&gt; {
+    // ignore favGenresLink to avoid an infinite loop
+    for (let addedNode of addedNodes) {
+      if (addedNode.classList.contains('favGenresLink')) {
+        return
+      }
+    }
+
+    // whenever new content is added
+    //addColorsOnSongs(favoriteGenres);
+
+    chrome.storage.local.get('colors', (data) =&gt; {
+      if (!data || Object.keys(data).length === 0 || Object.keys(data.colors).length === 0) {
+          addColorsOnSongs(favoriteGenres);
+      } else {
+        console.log(data)
+          addColorsOnSongs(data.colors);
+      }
+    });
+  });
+}
+</code></pre>
+</div>
+<h3>Create a browser action &amp; icon</h3>
+<div class="row">
+<p>Set an icon for the extension's button on the toolbar menu (we'll reuse the r/ListenToThis icon):</p>
+<pre><code class="language-json">  &quot;icons&quot;: {
+    &quot;48&quot;: &quot;icons/logo.png&quot;
+  },
+  &quot;browser_action&quot;: {
+    &quot;default_icon&quot;: {
+      &quot;48&quot;: &quot;icons/logo.png&quot;
+    },
+    &quot;default_title&quot;: &quot;Music-Highlight&quot;,
+    &quot;browser_style&quot;: true,
+    &quot;default_popup&quot;: &quot;action.html&quot;
+  }
+</code></pre>
+</div>
+<p>Since going to the Options page involves so many steps, we'll create a menu with an <strong>Options</strong> button that will open the page with one click:</p>
+<div class="row">
+<p>create <strong>action.html</strong>:</p>
+<pre><code class="language-html">&lt;html&gt;
+&lt;body&gt;
+  &lt;button id=&quot;openOptions&quot;&gt;Options...&lt;/button&gt;
+  &lt;script src=&quot;action.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+</div>
+<div class="row">
+<p>and <strong>action.js</strong></p>
+<pre><code class="language-js">document.getElementById('openOptions').addEventListener('click', (e) =&gt; {
+  let optionsUrl = chrome.extension.getURL(&quot;./options.html&quot;);
+  chrome.tabs.create({
+    url: optionsUrl
+  });
+})
+</code></pre>
+</div>
+<p>Now, when you click on the extension's toolbar icon, a menu will pop-up with a button that opens the <strong>Options</strong> page!</p>
+<p><img src="./assets/browser-ext-highlight/browser-ext-menu.png" alt="how to make a browser extension - menu"></p>
+<p><img src="./assets/browser-ext-highlight/browser-ext-menu-page.jpg" alt="how to make a browser extension - menu page"></p>
+<p>You can find the full source code here: <a href="https://github.com/alexadam/ListenToThis-Highlight">https://github.com/alexadam/ListenToThis-Highlight</a></p>
+
+     </article>
+       <div id="modal-view" onclick="toggleImgModalView()">
+           <img id="img-modal-view" src="" alt="">
+       </div>
+   
+       <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+
+       <script>
+       window.onload = () => {
+
+        document.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightBlock(block);
+        });
+
+        let allImgs = document.getElementsByTagName('img')
+        for (imgElem of allImgs) {
+            if (imgElem.id === 'img-modal-view') continue;
+            imgElem.addEventListener("click", (e) => toggleImgModalView(e.target.src))
+        }
+
+        // let allCode = document.getElementsByTagName('code')
+        // for (codeElem of allCode) {
+        //     const copyButton = document.createElement('button')
+        //     copyButton.innerText = '📋'
+        //     copyButton.innerText = 'copy'
+        //     // copyButton.style.position = 'absolute'
+        //     // copyButton.style.float = 'right'
+        //     // copyButton.style.marginTop = '-0px'
+        //     // copyButton.style.right = '0'
+        //     // copyButton.style.backgroundColor = 'rgba(0,0,0,0)'
+        //     // copyButton.style.border = 'none'
+        //     // codeElem.parentElement.insertBefore(copyButton, codeElem.parentElement.firstChild);
+        //     codeElem.parentElement.append(copyButton);
+        //     copyButton.addEventListener("click", ((e) => console.log(e.innerText)).bind(null, codeElem))
+        // }
+
+        document.onkeydown = function(evt) {
+            evt = evt || window.event;
+            if (evt.keyCode == 27) {
+                isImgModalVisible = false
+                document.getElementById('modal-view').style['display'] = 'none';
+            }
+        };
+       }
+
+           let isImgModalVisible = false;
+   
+           function toggleImgModalView(imgSrc) {
+               document.getElementById('modal-view').style['display'] = isImgModalVisible ? 'none' : 'flex';
+               isImgModalVisible = !isImgModalVisible;   
+               if (imgSrc) {
+                   document.getElementById('img-modal-view').src = imgSrc;
+               }
+           }
+
+        function expand(event) {
+            event.target.children[0].style['display'] = 'block';
+        }
+       </script>
+
+   </body>
+   
+   </html>
+    

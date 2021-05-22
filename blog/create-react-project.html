@@ -1,0 +1,428 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    
+    <head>
+    
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-55MTXHSJDQ"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+    
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag('js', new Date());
+            gtag('config', 'G-55MTXHSJDQ');
+        </script>
+    
+        <title>Create a React project from scratch, with TypeScript and Webpack</title>
+        <meta name="description" content="Create a React project from scratch, with TypeScript and Webpack">
+        <meta name="keywords" content="react, typescript, webpack, dev, webdev, web, javascript">
+        <meta name=”robots” content="index, follow">
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+        <link rel="stylesheet" href="../style.css">
+
+        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/railscasts.min.css">
+    </head>
+    
+    <body>
+        <nav class="header">
+            <div class="small-container menu">
+                <a class="header-link" href="../index.html">Home</a>
+                <a class="header-link" href="../projects/index.html">Projects</a>
+                <a class="header-link" href="../blog/index.html">Blog</a>
+                <a class="header-link" href="../contact.html">Contact</a>
+            </div>
+        </nav>
+    
+        <article>
+   <h1>Create a React project from scratch, with TypeScript and Webpack</h1>
+<p>A step by step guide  on how to create a React project from scratch, with TypeScript and Webpack.</p>
+<h2>Setup</h2>
+<p>Prerequisites:</p>
+<ul>
+<li>node</li>
+<li>yarn</li>
+</ul>
+<div class="row">
+<p>Create the project's folder:</p>
+<pre><code class="language-sh">mkdir react-app
+cd react-app
+</code></pre>
+</div>
+<div class="row">
+<p>Generate a default <strong>package.json</strong> file with yarn:</p>
+<pre><code class="language-sh">yarn init -y
+</code></pre>
+</div>
+<div class="row">
+<p>Install React, TypeScript and Webpack:</p>
+<pre><code class="language-sh">yarn add react react-dom
+
+yarn add --dev @types/react \
+        @types/react-dom \
+        awesome-typescript-loader \
+        css-loader \
+        html-webpack-plugin \
+        node-sass \
+        sass-loader \
+        style-loader \
+        typescript \
+        webpack \
+        webpack-cli \
+        webpack-dev-server
+</code></pre>
+</div>
+<div class="row">
+<p>Add build, dev &amp; clean scripts in the <strong>package.json</strong> file:</p>
+<pre><code class="language-json"> ....
+  },
+  &quot;scripts&quot;: {
+    &quot;clean&quot;: &quot;rm -rf dist/*&quot;,
+    &quot;build&quot;: &quot;webpack&quot;,
+    &quot;dev&quot;: &quot;webpack serve&quot;
+  }
+</code></pre>
+</div>
+<div class="row">
+<p>Configure TypeScript by creating the file <strong>tsconfig.json</strong> with:</p>
+<pre><code class="language-json">{
+  &quot;compilerOptions&quot;: {
+    &quot;incremental&quot;: true,
+    &quot;target&quot;: &quot;es5&quot;,
+    &quot;module&quot;: &quot;commonjs&quot;,
+    &quot;lib&quot;: [&quot;dom&quot;, &quot;dom.iterable&quot;, &quot;es6&quot;],
+    &quot;allowJs&quot;: true,
+    &quot;jsx&quot;: &quot;react&quot;,
+    &quot;sourceMap&quot;: true,
+    &quot;outDir&quot;: &quot;./dist/&quot;,
+    &quot;rootDir&quot;: &quot;.&quot;,
+    &quot;removeComments&quot;: true,
+    &quot;strict&quot;: true,
+    &quot;moduleResolution&quot;: &quot;node&quot;,            
+    &quot;allowSyntheticDefaultImports&quot;: true,
+    &quot;esModuleInterop&quot;: true,
+    &quot;experimentalDecorators&quot;: true
+  },
+  &quot;include&quot;: [
+    &quot;client&quot;
+  ],
+  &quot;exclude&quot;: [
+    &quot;node_modules&quot;,
+    &quot;build&quot;,
+    &quot;dist&quot;
+  ]
+}
+</code></pre>
+</div>
+<div class="row">
+<p>To configure Webpack, make a file <strong>webpack.config.js</strong> containing:</p>
+<pre><code class="language-js">const path = require(&quot;path&quot;);
+
+const app_dir = __dirname + '/client';
+
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const HTMLWebpackPluginConfig = new HtmlWebpackPlugin({
+  template: app_dir + '/index.html',
+  filename: 'index.html',
+  inject: 'body'
+});
+
+const config = {
+  mode: 'development',
+  entry: app_dir + '/app.tsx',
+  output: {
+    path: __dirname + '/dist',
+    filename: 'app.js',
+    publicPath: '/'
+  },
+  module: {
+    rules: [{
+        test: /\.s?css$/,
+        use: [
+          'style-loader',
+          'css-loader',
+          'sass-loader'
+        ]
+      }, {
+        test: /\.tsx?$/,
+        loader: &quot;awesome-typescript-loader&quot;,
+        exclude: /(node_modules|bower_components)/
+      },
+      {
+        test: /\.(woff|woff2|ttf|eot)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
+        exclude: [/node_modules/],
+        loader: &quot;file-loader&quot;
+      },
+      {
+        test: /\.(jpe?g|png|gif|svg)$/i,
+        exclude: [/node_modules/],
+        loader: &quot;file-loader&quot;
+      },
+      {
+        test: /\.(pdf)$/i,
+        exclude: [/node_modules/],
+        loader: &quot;file-loader&quot;,
+        options: {
+          name: '[name].[ext]',
+        },
+      },
+    ]
+  },
+  plugins: [HTMLWebpackPluginConfig],
+  resolve: {
+    extensions: [&quot;.ts&quot;, &quot;.tsx&quot;, &quot;.js&quot;, &quot;.jsx&quot;]
+  },
+  optimization: {
+    removeAvailableModules: false,
+    removeEmptyChunks: false,
+    splitChunks: false,
+  },
+  devServer: {
+    port: 8080,
+    // open: true,
+    hot: true,
+    inline: true,
+    historyApiFallback: true,
+  },
+};
+module.exports = config;
+</code></pre>
+</div>
+<h2>Example App</h2>
+<div class="row">
+<p>Create a folder named <strong>client</strong> (in the project's folder):</p>
+<pre><code class="language-sh">mkdir client
+cd client
+</code></pre>
+</div>
+<div class="row">
+<p>Make a simple React component, in the file <strong>numbers.tsx</strong>:</p>
+<pre><code class="language-js">import React, {useState} from 'react';
+
+interface INumberProps {
+  initValue: number
+}
+
+const Numbers = (props: INumberProps) =&gt; {
+  const [value, setValue] = useState(props.initValue)
+
+  const onIncrement = () =&gt; {
+    setValue(value + 1)
+  }
+
+  const onDecrement = () =&gt; {
+    setValue(value - 1)
+  }
+
+  return (
+    &lt;div&gt;
+      Number is {value}
+        &lt;div&gt;
+          &lt;button onClick={onIncrement}&gt;+&lt;/button&gt;
+          &lt;button onClick={onDecrement}&gt;-&lt;/button&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}
+export default Numbers
+
+///
+// The same component as a Class
+
+// interface INumbersProps {
+//   initValue: number
+// }
+
+// interface INumbersState {
+//   value: number
+// }
+
+// export default class Numbers 
+//   extends React.Component&lt;INumbersProps, INumbersState&gt; {
+
+//   constructor(props: INumbersProps) {
+//       super(props)
+//      // this.state = { value: this.props.initValue };
+//   }
+
+//   componentWillMount = () =&gt; {
+//       this.setState({
+//           value: this.props.initValue
+//       })
+//   }
+
+//   onIncrement = () =&gt; {
+//       let newVal = this.state.value + 1
+//       this.setState({
+//           value: newVal
+//       })
+//   }
+
+//   onDecrement = () =&gt; {
+//       let newVal = this.state.value - 1
+//       this.setState({
+//           value: newVal
+//       })
+//   }
+
+//   render = () =&gt; {
+//       return (
+//           &lt;div&gt;
+//               Number is {this.state.value}
+//               &lt;div&gt;
+//                   &lt;button onClick={this.onIncrement}&gt;+&lt;/button&gt;
+//                   &lt;button onClick={this.onDecrement}&gt;-&lt;/button&gt;
+//               &lt;/div&gt;
+//           &lt;/div&gt;
+//       )
+//   }
+// }
+</code></pre>
+</div>
+<div class="row">
+<p>Create the main React component (the entry point), in the file <strong>app.tsx</strong>:</p>
+<pre><code class="language-js">import * as React from 'react';
+import * as ReactDOM from 'react-dom';
+import Numbers from './numbers';
+
+ReactDOM.render(
+    &lt;Numbers initValue={42} /&gt;,
+    document.getElementById('app') as HTMLElement
+  );
+</code></pre>
+</div>
+<div class="row">
+<p>Next, add the <strong>index.html</strong>:</p>
+<pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot; /&gt;
+  &lt;title&gt;React TypeScript&lt;/title&gt;
+&lt;/head&gt;
+
+&lt;body&gt;
+  &lt;div id=&quot;app&quot;&gt;&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+</div>
+<p>Then, run <code>yarn dev</code> and open <code>http://localhost:8080/</code> in a browser.</p>
+<h2>Use this project as a template</h2>
+<div class="row">
+<p>You can save the <em>Setup</em> steps as a shell script:</p>
+<pre><code class="language-sh">#!/bin/sh
+
+rm -rf node_modules
+rm package.json
+
+yarn init --yes
+
+yarn add react react-dom
+
+yarn add --dev @types/react \
+        @types/react-dom \
+        awesome-typescript-loader \
+        css-loader \
+        html-webpack-plugin \
+        node-sass \
+        sass-loader \
+        style-loader \
+        typescript \
+        webpack \
+        webpack-cli \
+        webpack-dev-server
+
+# Remove the last line
+sed -i.bak '$ d' package.json &amp;&amp; rm package.json.bak
+
+# append the scripts commads
+cat &lt;&lt;EOT &gt;&gt; package.json
+   ,&quot;scripts&quot;: {
+      &quot;clean&quot;: &quot;rm -rf dist/*&quot;,
+      &quot;build&quot;: &quot;webpack&quot;,
+      &quot;dev&quot;: &quot;webpack serve&quot;
+   }
+}
+</code></pre>
+</div>
+<div class="row">
+<p>Delete the <strong>node-modules</strong> folder and, when you want to start a new project, you can copy the contents of <em>react-app</em> to the new location:</p>
+<pre><code class="language-sh">mkdir new-project
+cd new-project
+
+# copy the react-app folder content to the new project
+rsync -rtv /path/to/../react-app/ .
+
+./init.sh
+</code></pre>
+</div>
+
+     </article>
+       <div id="modal-view" onclick="toggleImgModalView()">
+           <img id="img-modal-view" src="" alt="">
+       </div>
+   
+       <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+
+       <script>
+       window.onload = () => {
+
+        document.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightBlock(block);
+        });
+
+        let allImgs = document.getElementsByTagName('img')
+        for (imgElem of allImgs) {
+            if (imgElem.id === 'img-modal-view') continue;
+            imgElem.addEventListener("click", (e) => toggleImgModalView(e.target.src))
+        }
+
+        // let allCode = document.getElementsByTagName('code')
+        // for (codeElem of allCode) {
+        //     const copyButton = document.createElement('button')
+        //     copyButton.innerText = '📋'
+        //     copyButton.innerText = 'copy'
+        //     // copyButton.style.position = 'absolute'
+        //     // copyButton.style.float = 'right'
+        //     // copyButton.style.marginTop = '-0px'
+        //     // copyButton.style.right = '0'
+        //     // copyButton.style.backgroundColor = 'rgba(0,0,0,0)'
+        //     // copyButton.style.border = 'none'
+        //     // codeElem.parentElement.insertBefore(copyButton, codeElem.parentElement.firstChild);
+        //     codeElem.parentElement.append(copyButton);
+        //     copyButton.addEventListener("click", ((e) => console.log(e.innerText)).bind(null, codeElem))
+        // }
+
+        document.onkeydown = function(evt) {
+            evt = evt || window.event;
+            if (evt.keyCode == 27) {
+                isImgModalVisible = false
+                document.getElementById('modal-view').style['display'] = 'none';
+            }
+        };
+       }
+
+           let isImgModalVisible = false;
+   
+           function toggleImgModalView(imgSrc) {
+               document.getElementById('modal-view').style['display'] = isImgModalVisible ? 'none' : 'flex';
+               isImgModalVisible = !isImgModalVisible;   
+               if (imgSrc) {
+                   document.getElementById('img-modal-view').src = imgSrc;
+               }
+           }
+
+        function expand(event) {
+            event.target.children[0].style['display'] = 'block';
+        }
+       </script>
+
+   </body>
+   
+   </html>
+    

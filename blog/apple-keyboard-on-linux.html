@@ -1,0 +1,157 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    
+    <head>
+    
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-55MTXHSJDQ"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+    
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag('js', new Date());
+            gtag('config', 'G-55MTXHSJDQ');
+        </script>
+    
+        <title>Apple Magic Keyboard on Linux</title>
+        <meta name="description" content="Apple Magic Keyboard on Linux, Ubuntu">
+        <meta name="keywords" content="apple, linux, ubuntu, keyboard, apple keyboard">
+        <meta name=”robots” content="index, follow">
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+        <link rel="stylesheet" href="../style.css">
+
+        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/railscasts.min.css">
+    </head>
+    
+    <body>
+        <nav class="header">
+            <div class="small-container menu">
+                <a class="header-link" href="../index.html">Home</a>
+                <a class="header-link" href="../projects/index.html">Projects</a>
+                <a class="header-link" href="../blog/index.html">Blog</a>
+                <a class="header-link" href="../contact.html">Contact</a>
+            </div>
+        </nav>
+    
+        <article>
+   <h1>Apple Magic Keyboard on Linux</h1>
+<p>This is a guide for Apple Magic Keyboard, US layout, connected (via USB) to Ubuntu 20.04 running on a ThinkPad.</p>
+<p>To see how the keys are mapped by default, run <code>xmodmap</code> in a terminal. I made this diagram to make it clearer:</p>
+<pre><code class="language-nohighlight">+-------------------+  +-------------+
+|                   |  |             |
+| Shift             |  | ~           |
+|                   |  |             |
+|                   |  |             |
+|                   |  | Key: 94     |
+|                   |  | tilde       |
+|                   |  |             |
++-------------------+  +-------------+
++-------------+  +-------------+  +-------------+  +-------------+
+|             |  |             |  |             |  |             |
+| fn          |  | control     |  | option      |  | command     |
+|             |  |             |  |             |  |             |
+|             |  |             |  |             |  |             |
+|             |  | Key: 37     |  | Key: 64     |  | Key: 133    |
+|             |  | Name: Ctrl_L|  | Alt_L       |  | Super_L     |
+|             |  | control     |  | mod1        |  | mod4        |
++-------------+  +-------------+  +-------------+  +-------------+
+</code></pre>
+<h2>Remap ~, control, option and command keys</h2>
+<p>I want to swap <strong>tilde (~)</strong> with <strong>§</strong> and to remap:</p>
+<ul>
+<li><strong>command</strong> left to <strong>Ctrl</strong></li>
+<li><strong>option</strong> left to <strong>Alt</strong></li>
+<li><strong>control</strong> left to <strong>Super</strong></li>
+</ul>
+<div class="row">
+<p>So, let's create a file <strong>.xmodmap-apple</strong> and paste:</p>
+<pre><code>keycode 94 = grave asciitilde grave asciitilde
+clear control
+clear mod1
+clear mod4
+keycode 37 = Super_L
+keycode 64 = Alt_L Meta_L
+keycode 133 = Control_L
+add control = Control_L Control_R
+add mod1 = Alt_L Meta_L
+add mod4 = Super_L Super_R
+</code></pre>
+</div>
+<div class="row">
+<p>Then, in a terminal run:</p>
+<pre><code>xmodmap .xmodmap-apple
+</code></pre>
+</div>
+<p>You have to run this command every time you log-in.</p>
+<p>Next ... How to connect the keyboard via Bluetooth....</p>
+<p><a class="article-link" href="https://superuser.com/questions/245138/linux-ubuntu-apple-aluminium-keyboard-remap-greater-less-with-tilde">Source 1</a></p>
+<p><a class="article-link" href="https://help.ubuntu.com/community/AppleKeyboard">Source 2</a></p>
+
+     </article>
+       <div id="modal-view" onclick="toggleImgModalView()">
+           <img id="img-modal-view" src="" alt="">
+       </div>
+   
+       <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+
+       <script>
+       window.onload = () => {
+
+        document.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightBlock(block);
+        });
+
+        let allImgs = document.getElementsByTagName('img')
+        for (imgElem of allImgs) {
+            if (imgElem.id === 'img-modal-view') continue;
+            imgElem.addEventListener("click", (e) => toggleImgModalView(e.target.src))
+        }
+
+        // let allCode = document.getElementsByTagName('code')
+        // for (codeElem of allCode) {
+        //     const copyButton = document.createElement('button')
+        //     copyButton.innerText = '📋'
+        //     copyButton.innerText = 'copy'
+        //     // copyButton.style.position = 'absolute'
+        //     // copyButton.style.float = 'right'
+        //     // copyButton.style.marginTop = '-0px'
+        //     // copyButton.style.right = '0'
+        //     // copyButton.style.backgroundColor = 'rgba(0,0,0,0)'
+        //     // copyButton.style.border = 'none'
+        //     // codeElem.parentElement.insertBefore(copyButton, codeElem.parentElement.firstChild);
+        //     codeElem.parentElement.append(copyButton);
+        //     copyButton.addEventListener("click", ((e) => console.log(e.innerText)).bind(null, codeElem))
+        // }
+
+        document.onkeydown = function(evt) {
+            evt = evt || window.event;
+            if (evt.keyCode == 27) {
+                isImgModalVisible = false
+                document.getElementById('modal-view').style['display'] = 'none';
+            }
+        };
+       }
+
+           let isImgModalVisible = false;
+   
+           function toggleImgModalView(imgSrc) {
+               document.getElementById('modal-view').style['display'] = isImgModalVisible ? 'none' : 'flex';
+               isImgModalVisible = !isImgModalVisible;   
+               if (imgSrc) {
+                   document.getElementById('img-modal-view').src = imgSrc;
+               }
+           }
+
+        function expand(event) {
+            event.target.children[0].style['display'] = 'block';
+        }
+       </script>
+
+   </body>
+   
+   </html>
+    
