@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What Time Does With Money: an interactive reader</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..600&family=Schibsted+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBFBF8;
+    --ink:#20262E;
+    --ink-soft:#5B6470;
+    --hairline:#E9E7DF;
+    --amber:#9A6700;
+    --amber-bg:#FBF1DC;
+    --amber-line:#DFB55F;
+    --green:#116B41;
+    --green-bg:#E9F4EC;
+    --green-line:#8FC3A3;
+  }
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);font-family:'Schibsted Grotesk',system-ui,sans-serif;}
+  .serif{font-family:'Newsreader',Georgia,serif;}
+  .mono{font-family:'IBM Plex Mono',ui-monospace,monospace;}
+
+  .sentence{
+    font-family:'Newsreader',Georgia,serif;
+    font-size:1.28rem;
+    line-height:2.1;
+    font-weight:400;
+    color:var(--ink);
+  }
+  @media (min-width:768px){ .sentence{font-size:1.42rem} }
+
+  .var,.out{
+    font-family:'IBM Plex Mono',ui-monospace,monospace;
+    font-size:.82em;
+    font-weight:500;
+    padding:.08em .42em .1em;
+    border-radius:.45rem;
+    white-space:nowrap;
+    vertical-align:baseline;
+  }
+  .var{
+    color:var(--amber);
+    background:var(--amber-bg);
+    border-bottom:2px dashed var(--amber-line);
+    cursor:text;
+    transition:background .15s ease, box-shadow .15s ease;
+    outline:none;
+  }
+  .var:hover{background:#F7E7C3;}
+  .var:focus{background:#F7E7C3;box-shadow:0 0 0 3px rgba(154,103,0,.18);border-bottom-style:solid;}
+  .out{
+    color:var(--green);
+    background:var(--green-bg);
+    border-bottom:2px solid var(--green-line);
+  }
+  .out.pulse{animation:pulse .55s ease;}
+  @keyframes pulse{
+    0%{background:#CBE8D4;}
+    100%{background:var(--green-bg);}
+  }
+
+  .eyebrow{
+    font-family:'IBM Plex Mono',ui-monospace,monospace;
+    font-size:.68rem;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:#949082;
+  }
+  .rule{height:1px;background:var(--hairline);}
+  .row{border-bottom:1px solid var(--hairline);}
+  .row:last-child{border-bottom:none;}
+
+  .numeral{
+    font-family:'Newsreader',Georgia,serif;
+    font-style:italic;
+    color:#B9B4A5;
+  }
+  .curbtn{
+    font-family:'IBM Plex Mono',ui-monospace,monospace;
+    font-size:.7rem;
+    letter-spacing:.04em;
+    padding:.32rem .7rem;
+    border:1px solid var(--hairline);
+    border-radius:999px;
+    color:var(--ink-soft);
+    background-color:#fff;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .curbtn:hover{border-color:var(--amber-line);color:var(--amber);}
+  .curbtn:focus-visible{outline:2px solid var(--amber-line);outline-offset:2px;}
+  .curbtn.active{
+    /* background-color, not the shorthand: the shorthand resets the
+       .curselect caret's repeat/position/size and tiles it */
+    background-color:var(--amber-bg);
+    border-color:var(--amber-line);
+    color:var(--amber);
+    font-weight:600;
+  }
+  .curselect{
+    -webkit-appearance:none;appearance:none;
+    padding-right:1.5rem;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%238C8878' stroke-width='1.4' stroke-linecap='round'/></svg>");
+    background-repeat:no-repeat;
+    background-position:right .6rem center;
+    background-size:.5rem;
+  }
+  .curselect.active{
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%23B4801A' stroke-width='1.4' stroke-linecap='round'/></svg>");
+  }
+  /* ---- table of contents ---- */
+  #toc{
+    position:fixed;
+    left:max(1.5rem, calc(50vw - 384px - 240px));
+    top:50%;
+    transform:translateY(-50%);
+    width:200px;
+    display:none;
+  }
+  @media (min-width:1280px){ #toc{display:block} }
+  #toc a{
+    display:flex;
+    align-items:baseline;
+    gap:.6rem;
+    padding:.28rem 0;
+    font-family:'IBM Plex Mono',ui-monospace,monospace;
+    font-size:.7rem;
+    letter-spacing:.03em;
+    color:#A5A193;
+    text-decoration:none;
+    border-left:2px solid transparent;
+    padding-left:.7rem;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  #toc a:hover{color:var(--amber);}
+  #toc a:focus-visible{outline:2px solid var(--amber-line);outline-offset:2px;}
+  #toc a.toc-active{color:var(--green);border-left-color:var(--green);font-weight:600;}
+  #toc .toc-num{
+    font-family:'Newsreader',Georgia,serif;
+    font-style:italic;
+    font-size:.78rem;
+    min-width:1.6em;
+    color:inherit;
+    opacity:.75;
+  }
+  .src-link{
+    color:var(--ink);
+    font-weight:500;
+    text-decoration:underline;
+    text-decoration-color:var(--amber-line);
+    text-underline-offset:3px;
+    transition:color .15s ease;
+  }
+  .src-link:hover{color:var(--amber);}
+  .src-link:focus-visible{outline:2px solid var(--amber-line);outline-offset:2px;border-radius:2px;}
+  /* ---- formula reveal ---- */
+  .fx{
+    display:inline-block;
+    font-family:'Newsreader',Georgia,serif;
+    font-style:italic;
+    font-size:.85rem;
+    line-height:1;
+    padding:.18rem .5rem .24rem;
+    margin-left:.55rem;
+    border:1px solid var(--hairline);
+    border-radius:999px;
+    color:#A5A193;
+    background:#fff;
+    cursor:pointer;
+    vertical-align:middle;
+    transition:all .15s ease;
+  }
+  .fx:hover{color:var(--amber);border-color:var(--amber-line);}
+  .fx:focus-visible{outline:2px solid var(--amber-line);outline-offset:2px;}
+  .fx[aria-expanded="true"]{
+    color:var(--amber);
+    background:var(--amber-bg);
+    border-color:var(--amber-line);
+  }
+  .formula-panel{
+    display:block;
+    margin-top:.9rem;
+    padding:.6rem .9rem;
+    border-left:2px solid var(--amber-line);
+    border-radius:0 .45rem .45rem 0;
+    background:#F7F5ED;
+    font-family:'IBM Plex Mono',ui-monospace,monospace;
+    font-size:.72rem;
+    line-height:2;
+    color:var(--ink-soft);
+    white-space:normal;
+  }
+  .formula-panel sup{font-size:.72em;}
+  .formula-panel[hidden]{display:none;}
+  ::selection{background:#EFE3C4;}
+  @media (prefers-reduced-motion: reduce){
+    .out.pulse{animation:none}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body class="antialiased">
+
+<main class="max-w-3xl mx-auto px-6 md:px-8 pt-16 md:pt-24 pb-24">
+
+  <!-- ============ HEADER ============ -->
+  <header>
+    <div class="flex items-center justify-between gap-4">
+      <p class="eyebrow">An interactive reader · compound interest</p>
+      <a href="https://github.com/alexadam/compound-effect" target="_blank" rel="noopener noreferrer" class="src-link mono text-[.68rem] whitespace-nowrap" aria-label="View the source code on GitHub">
+        Source code ↗
+      </a>
+    </div>
+    <h1 class="serif font-medium text-[2.6rem] md:text-[3.6rem] leading-[1.08] mt-5 tracking-tight">
+      What time does<br class="hidden md:block"> with <em class="font-normal">money.</em>
+    </h1>
+    <p class="mt-6 text-[1.02rem] leading-relaxed text-[color:var(--ink-soft)] max-w-xl">
+      Each sentence below is a small financial story you can rewrite.
+      <span class="var" contenteditable="false" style="cursor:default">Amber numbers</span> are yours to edit: click one, type, or nudge it with ↑ ↓.
+      <span class="out">Green numbers</span> are what time does with them.
+    </p>
+
+    <div class="mt-7 flex items-center gap-2 flex-wrap" role="group" aria-label="Currency">
+      <span class="eyebrow !tracking-[.14em] mr-1">Currency</span>
+      <button class="curbtn active" data-code="USD">$ USD</button>
+      <button class="curbtn" data-code="EUR">€ EUR</button>
+      <button class="curbtn" data-code="GBP">£ GBP</button>
+      <button class="curbtn" data-code="JPY">¥ JPY</button>
+      <button class="curbtn" data-code="RON">RON lei</button>
+      <select id="curmore" class="curselect curbtn" aria-label="More currencies"></select>
+      <span class="mono text-[.65rem] text-[#B0AC9E] ml-1">symbols only; amounts don't convert</span>
+    </div>
+  </header>
+
+  <!-- ============ HERO SENTENCE ============ -->
+  <section class="mt-14 md:mt-20" data-calc="hero" aria-label="Featured example">
+    <div class="rule mb-10"></div>
+    <p class="sentence !text-[1.5rem] md:!text-[1.85rem] !leading-[2]">
+      A <span class="var" data-key="cost" data-prefix="$" role="textbox" aria-label="daily coffee cost" contenteditable>$4</span> coffee,
+      <span class="var" data-key="freq" role="textbox" aria-label="days per year" contenteditable>365</span> days a year, invested instead
+      at <span class="var" data-key="rate" data-suffix="%" role="textbox" aria-label="annual return" contenteditable>7%</span> a year,
+      would grow to <span class="out" data-out="grown">$0</span>
+      after <span class="var" data-key="years" role="textbox" aria-label="years" contenteditable>20</span> years,
+      on just <span class="out" data-out="spent">$0</span> of skipped coffee.
+    </p>
+
+    <figure class="mt-8" aria-hidden="true">
+      <svg id="spark" viewBox="0 0 640 150" class="w-full h-auto" preserveAspectRatio="none"></svg>
+      <figcaption class="flex gap-6 mt-3 mono text-[.7rem] text-[color:var(--ink-soft)]">
+        <span class="flex items-center gap-2"><span class="inline-block w-5 h-[2px]" style="background:var(--green)"></span> invested &amp; compounding</span>
+        <span class="flex items-center gap-2"><span class="inline-block w-5 border-t-2 border-dashed" style="border-color:var(--amber-line)"></span> simply spent</span>
+      </figcaption>
+    </figure>
+    <div class="rule mt-10"></div>
+  </section>
+
+  <!-- ============ I · SMALL HABITS ============ -->
+  <section class="mt-16 md:mt-24">
+    <div class="flex items-baseline gap-4">
+      <span class="numeral text-2xl">I</span>
+      <div>
+        <p class="eyebrow">Small habits</p>
+        <h2 class="serif italic text-2xl md:text-[1.7rem] mt-1">What everyday spending quietly adds up to</h2>
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <p class="sentence row py-6" data-calc="coffee5">
+        A <span class="var" data-key="price" data-prefix="$" contenteditable>$5</span> coffee,
+        <span class="var" data-key="days" contenteditable>300</span> days a year, is
+        <span class="out" data-out="perYear">$0</span> a year, and
+        <span class="out" data-out="total">$0</span> over
+        <span class="var" data-key="years" contenteditable>10</span> years.
+      </p>
+
+      <p class="sentence row py-6" data-calc="latte4">
+        A <span class="var" data-key="price" data-prefix="$" contenteditable>$4</span> latte,
+        <span class="var" data-key="dpw" contenteditable>7</span> days a week, sets you back
+        <span class="out" data-out="week">$0</span> a week,
+        <span class="out" data-out="month">$0</span> a month, and
+        <span class="out" data-out="year">$0</span> a year.
+      </p>
+
+      <p class="sentence row py-6" data-calc="workday">
+        A commute coffee, <span class="var" data-key="dpw" contenteditable>5</span> days a week,
+        <span class="var" data-key="weeks" contenteditable>50</span> working weeks a year, is
+        <span class="out" data-out="cups">0</span> cups: a
+        <span class="var" data-key="price" data-prefix="$" contenteditable>$4</span> habit that really averages
+        <span class="out" data-out="daily">$0</span> a day, not
+        <span class="out" data-out="naive">$0</span>, and costs
+        <span class="out" data-out="year">$0</span> a year.
+      </p>
+
+      <p class="sentence row py-6" data-calc="latte2">
+        Even a modest <span class="var" data-key="price" data-prefix="$" contenteditable>$2</span> latte,
+        <span class="var" data-key="dpw" contenteditable>4</span> days a week, means
+        <span class="out" data-out="total">$0</span> spent after
+        <span class="var" data-key="years" contenteditable>10</span> years.
+      </p>
+
+      <p class="sentence row py-6" data-calc="smoker">
+        A <span class="var" data-key="pack" data-prefix="$" contenteditable>$8</span> pack of cigarettes a day burns through
+        <span class="out" data-out="year">$0</span> a year, and
+        <span class="out" data-out="decade">$0</span> in a decade.
+      </p>
+
+      <p class="sentence row py-6" data-calc="latefee">
+        Paying a <span class="var" data-key="fee" data-prefix="$" contenteditable>$35</span> late fee every month flushes
+        <span class="out" data-out="year">$0</span> a year down the drain, and
+        <span class="out" data-out="decade">$0</span> over ten.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ II · SAVING ============ -->
+  <section class="mt-16 md:mt-24">
+    <div class="flex items-baseline gap-4">
+      <span class="numeral text-2xl">II</span>
+      <div>
+        <p class="eyebrow">Saving</p>
+        <h2 class="serif italic text-2xl md:text-[1.7rem] mt-1">Steady deposits, given time</h2>
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <p class="sentence row py-6" data-calc="dollarday">
+        Save just <span class="var" data-key="amt" data-prefix="$" contenteditable>$1</span> a day at a
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>7%</span> return and after
+        <span class="var" data-key="years" contenteditable>30</span> years you'll be holding
+        <span class="out" data-out="fv">$0</span>.
+      </p>
+
+      <p class="sentence row py-6" data-calc="nest">
+        Start with <span class="var" data-key="start" data-prefix="$" contenteditable>$25,000</span>, add
+        <span class="var" data-key="monthly" data-prefix="$" contenteditable>$500</span> a month at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>7%</span> compounded monthly, and in
+        <span class="var" data-key="years" contenteditable>15</span> years the account holds
+        <span class="out" data-out="fv">$0</span>.
+      </p>
+
+      <p class="sentence row py-6" data-calc="lump5">
+        A single <span class="var" data-key="p" data-prefix="$" contenteditable>$1,000</span> invested at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>5%</span> becomes
+        <span class="out" data-out="fv">$0</span> after
+        <span class="var" data-key="years" contenteditable>10</span> years, without adding a cent.
+      </p>
+
+      <p class="sentence row py-6" data-calc="monthly150">
+        <span class="var" data-key="pm" data-prefix="$" contenteditable>$150</span> a month at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>10%</span> quietly grows into
+        <span class="out" data-out="fv">$0</span> in
+        <span class="var" data-key="years" contenteditable>10</span> years.
+      </p>
+
+      <p class="sentence row py-6" data-calc="millionaire">
+        At <span class="var" data-key="d1" data-prefix="$" contenteditable>$5</span> a day and
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>10%</span> returns, reaching
+        <span class="var" data-key="goal" data-prefix="$" contenteditable>$1,000,000</span> takes
+        <span class="out" data-out="y1">0</span> years. Double it to
+        <span class="var" data-key="d2" data-prefix="$" contenteditable>$10</span> a day and you get there
+        <span class="out" data-out="sooner">0</span> years sooner.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ III · INVESTING ============ -->
+  <section class="mt-16 md:mt-24">
+    <div class="flex items-baseline gap-4">
+      <span class="numeral text-2xl">III</span>
+      <div>
+        <p class="eyebrow">Investing</p>
+        <h2 class="serif italic text-2xl md:text-[1.7rem] mt-1">Growth, rate, and patience</h2>
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <p class="sentence row py-6" data-calc="sp500">
+        <span class="var" data-key="p" data-prefix="$" contenteditable>$1,000</span> in an index fund growing
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>10%</span> a year becomes
+        <span class="out" data-out="fv">$0</span> after
+        <span class="var" data-key="years" contenteditable>40</span> years.
+      </p>
+
+      <p class="sentence row py-6" data-calc="hotstock">
+        A <span class="var" data-key="p" data-prefix="$" contenteditable>$1,000</span> bet on a stock compounding at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>31%</span> is worth
+        <span class="out" data-out="fv">$0</span> ten years later, a total return of
+        <span class="out" data-out="ret">0%</span> over
+        <span class="var" data-key="years" contenteditable>10</span> years.
+      </p>
+
+      <p class="sentence row py-6" data-calc="mortgage">
+        Choose the smaller house, invest the
+        <span class="var" data-key="annual" data-prefix="$" contenteditable>$6,000</span> yearly difference at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>6%</span>, and after
+        <span class="var" data-key="years" contenteditable>30</span> years you'd have
+        <span class="out" data-out="fv1">$0</span>. Hold it
+        <span class="var" data-key="extra" contenteditable>20</span> more years and it's
+        <span class="out" data-out="fv2">$0</span>.
+      </p>
+
+      <p class="sentence row py-6" data-calc="tworates">
+        Rate matters more than it looks: <span class="var" data-key="p" data-prefix="$" contenteditable>$10,000</span> for
+        <span class="var" data-key="years" contenteditable>30</span> years at
+        <span class="var" data-key="r1" data-suffix="%" contenteditable>10%</span> becomes
+        <span class="out" data-out="fv1">$0</span>, but at
+        <span class="var" data-key="r2" data-suffix="%" contenteditable>12.5%</span> it becomes
+        <span class="out" data-out="fv2">$0</span>.
+      </p>
+
+      <p class="sentence row py-6" data-calc="simplecompound">
+        Withdraw the gains on <span class="var" data-key="p" data-prefix="$" contenteditable>$10,000</span> at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>7%</span> every year and you'll earn
+        <span class="out" data-out="simple">$0</span> in
+        <span class="var" data-key="years" contenteditable>40</span> years. Let them compound instead, and you'll earn
+        <span class="out" data-out="compound">$0</span>.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ IV · PRESENT VALUE ============ -->
+  <section class="mt-16 md:mt-24">
+    <div class="flex items-baseline gap-4">
+      <span class="numeral text-2xl">IV</span>
+      <div>
+        <p class="eyebrow">Present value</p>
+        <h2 class="serif italic text-2xl md:text-[1.7rem] mt-1">What future money is worth today</h2>
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <p class="sentence row py-6" data-calc="pv1">
+        At <span class="var" data-key="rate" data-suffix="%" contenteditable>10%</span> interest,
+        <span class="var" data-key="fv" data-prefix="$" contenteditable>$1,100</span> a year from now is worth exactly
+        <span class="out" data-out="pv">$0</span> today.
+      </p>
+
+      <p class="sentence row py-6" data-calc="pv2">
+        A promise of <span class="var" data-key="fv" data-prefix="$" contenteditable>$500</span> next year, discounted at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>10%</span>, is worth
+        <span class="out" data-out="pv">$0</span> right now.
+      </p>
+
+      <p class="sentence row py-6" data-calc="pv3">
+        <span class="var" data-key="fv" data-prefix="$" contenteditable>$900</span> arriving in
+        <span class="var" data-key="years" contenteditable>3</span> years, at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>10%</span>, equals
+        <span class="out" data-out="pv">$0</span> in today's money.
+      </p>
+
+      <p class="sentence row py-6" data-calc="pv4">
+        A <span class="var" data-key="fv" data-prefix="$" contenteditable>$10,000</span> lump sum due in
+        <span class="var" data-key="years" contenteditable>5</span> years, discounted at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>7%</span>, is the same as
+        <span class="out" data-out="pv">$0</span> today.
+      </p>
+
+      <p class="sentence row py-6" data-calc="dollarcost">
+        Every <span class="var" data-key="amt" data-prefix="$" contenteditable>$1</span> you spend today is really
+        <span class="out" data-out="future">$0</span> taken out of your pocket
+        <span class="var" data-key="years" contenteditable>20</span> years from now, at an
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>8%</span> return.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ V · INFLATION ============ -->
+  <section class="mt-16 md:mt-24">
+    <div class="flex items-baseline gap-4">
+      <span class="numeral text-2xl">V</span>
+      <div>
+        <p class="eyebrow">Inflation &amp; taxes</p>
+        <h2 class="serif italic text-2xl md:text-[1.7rem] mt-1">The quiet leak</h2>
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <p class="sentence row py-6" data-calc="item">
+        An item that costs <span class="var" data-key="price" data-prefix="$" contenteditable>$100</span> today will cost
+        <span class="out" data-out="future">$0</span> in
+        <span class="var" data-key="years" contenteditable>10</span> years at
+        <span class="var" data-key="infl" data-suffix="%" contenteditable>3%</span> inflation.
+      </p>
+
+      <p class="sentence row py-6" data-calc="mattress">
+        Put <span class="var" data-key="amt" data-prefix="$" contenteditable>$100</span> under the mattress for
+        <span class="var" data-key="years" contenteditable>20</span> years at
+        <span class="var" data-key="infl" data-suffix="%" contenteditable>3%</span> inflation and it will only buy what
+        <span class="out" data-out="real">$0</span> buys today.
+      </p>
+
+      <p class="sentence row py-6" data-calc="retire">
+        To match the purchasing power of <span class="var" data-key="need" data-prefix="$" contenteditable>$60,000</span> today, in
+        <span class="var" data-key="years" contenteditable>20</span> years you'll need
+        <span class="out" data-out="required">$0</span>, assuming
+        <span class="var" data-key="infl" data-suffix="%" contenteditable>3%</span> inflation.
+      </p>
+
+      <p class="sentence row py-6" data-calc="apy">
+        <span class="var" data-key="p" data-prefix="$" contenteditable>$100</span> at
+        <span class="var" data-key="apy" data-suffix="%" contenteditable>5.05%</span> APY shows
+        <span class="out" data-out="nominal">$0</span> on your statement after
+        <span class="var" data-key="years" contenteditable>20</span> years, but with
+        <span class="var" data-key="infl" data-suffix="%" contenteditable>3%</span> inflation it's really worth
+        <span class="out" data-out="real">$0</span>.
+      </p>
+
+      <p class="sentence row py-6" data-calc="nestegg">
+        A nominal nest egg of <span class="var" data-key="amt" data-prefix="$" contenteditable>$350,000</span> arriving in
+        <span class="var" data-key="years" contenteditable>40</span> years, at
+        <span class="var" data-key="infl" data-suffix="%" contenteditable>2.5%</span> inflation, is only
+        <span class="out" data-out="real">$0</span> in today's dollars.
+      </p>
+
+      <p class="sentence row py-6" data-calc="taxes">
+        Pay <span class="var" data-key="tax" data-suffix="%" contenteditable>28%</span> tax on the interest and a
+        <span class="var" data-key="apy" data-suffix="%" contenteditable>5.05%</span> account really earns
+        <span class="out" data-out="effective">0%</span>; after
+        <span class="var" data-key="years" contenteditable>20</span> years, with
+        <span class="var" data-key="infl" data-suffix="%" contenteditable>3%</span> inflation, your
+        <span class="var" data-key="p" data-prefix="$" contenteditable>$100</span> is worth just
+        <span class="out" data-out="real">$0</span> in today's money.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ VI · TIME ============ -->
+  <section class="mt-16 md:mt-24">
+    <div class="flex items-baseline gap-4">
+      <span class="numeral text-2xl">VI</span>
+      <div>
+        <p class="eyebrow">Time</p>
+        <h2 class="serif italic text-2xl md:text-[1.7rem] mt-1">The other compounding currency</h2>
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <p class="sentence row py-6" data-calc="minutes">
+        <span class="var" data-key="min" contenteditable>20</span> minutes a day is
+        <span class="out" data-out="hours">0</span> hours a year, the same as
+        <span class="out" data-out="workdays">0</span> full eight-hour workdays.
+        And <span class="var" data-key="zero" contenteditable>0</span> minutes a day is
+        <span class="out" data-out="zeroHours">0</span> hours a year.
+      </p>
+
+      <p class="sentence row py-6" data-calc="scrolling">
+        <span class="var" data-key="hrs" contenteditable>2</span> hours of scrolling a day quietly consumes
+        <span class="out" data-out="hours">0</span> hours a year:
+        <span class="out" data-out="days">0</span> entire days, awake and asleep.
+      </p>
+
+      <p class="sentence row py-6" data-calc="reading">
+        Read just <span class="var" data-key="pages" contenteditable>10</span> pages a day and you'll finish
+        <span class="out" data-out="total">0</span> pages a year, about
+        <span class="out" data-out="books">0</span> books of
+        <span class="var" data-key="perBook" contenteditable>300</span> pages each.
+      </p>
+
+      <p class="sentence row py-6" data-calc="mastery">
+        Practicing <span class="var" data-key="hpd" contenteditable>1</span> hour a day, reaching
+        <span class="var" data-key="goal" contenteditable>10,000</span> hours of mastery takes
+        <span class="out" data-out="years">0</span> years; at
+        <span class="var" data-key="hpd2" contenteditable>3</span> hours a day, only
+        <span class="out" data-out="years2">0</span>.
+      </p>
+
+      <p class="sentence row py-6" data-calc="wage">
+        Earning <span class="var" data-key="salary" data-prefix="$" contenteditable>$60,000</span> a year over
+        <span class="var" data-key="hours" contenteditable>2,000</span> working hours means
+        <span class="out" data-out="hourly">$0</span> an hour, so a
+        <span class="var" data-key="price" data-prefix="$" contenteditable>$5</span> coffee costs
+        <span class="out" data-out="minutes">0</span> minutes of your life.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ VII · STARTING EARLY ============ -->
+  <section class="mt-16 md:mt-24">
+    <div class="flex items-baseline gap-4">
+      <span class="numeral text-2xl">VII</span>
+      <div>
+        <p class="eyebrow">Starting early</p>
+        <h2 class="serif italic text-2xl md:text-[1.7rem] mt-1">Save early and often</h2>
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <p class="sentence row py-6" data-calc="headstart">
+        Save <span class="var" data-key="pm" data-prefix="$" contenteditable>$100</span> a month from age
+        <span class="var" data-key="a1" contenteditable>18</span> at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>6%</span> and by
+        <span class="var" data-key="retire" contenteditable>65</span> you'll have
+        <span class="out" data-out="fv1">$0</span>. Wait until
+        <span class="var" data-key="a2" contenteditable>25</span> and you end up with only
+        <span class="out" data-out="fv2">$0</span>. That's
+        <span class="out" data-out="diff">$0</span> lost to
+        <span class="out" data-out="delay">0</span> years of waiting.
+      </p>
+
+      <p class="sentence row py-6" data-calc="headstart9">
+        Raise the return to <span class="var" data-key="rate" data-suffix="%" contenteditable>9%</span> and the head start from
+        <span class="var" data-key="a1" contenteditable>18</span> to
+        <span class="var" data-key="a2" contenteditable>25</span>, at
+        <span class="var" data-key="pm" data-prefix="$" contenteditable>$100</span> a month until
+        <span class="var" data-key="retire" contenteditable>65</span>, is worth
+        <span class="out" data-out="diff">$0</span>, bought with just
+        <span class="out" data-out="extra">$0</span> of extra deposits.
+      </p>
+
+      <p class="sentence row py-6" data-calc="babyfund">
+        Open a <span class="var" data-key="pm" data-prefix="$" contenteditable>$350</span>-a-month fund the day your baby is born, earning
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>7%</span>, and by the time she starts university at
+        <span class="var" data-key="age" contenteditable>17.5</span> it holds
+        <span class="out" data-out="fv">$0</span>.
+      </p>
+
+      <p class="sentence row py-6" data-calc="delaycost">
+        A <span class="var" data-key="age" contenteditable>25</span>-year-old saving
+        <span class="var" data-key="pm" data-prefix="$" contenteditable>$200</span> a month at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>7%</span> retires at
+        <span class="var" data-key="retire" contenteditable>65</span> with
+        <span class="out" data-out="fv">$0</span>, and every single year of delay erases about
+        <span class="out" data-out="cost">$0</span> of it.
+      </p>
+
+      <p class="sentence row py-6" data-calc="catchup">
+        To retire at <span class="var" data-key="retire" contenteditable>65</span> with as much as a friend who saved
+        <span class="var" data-key="pm" data-prefix="$" contenteditable>$150</span> a month from age
+        <span class="var" data-key="a1" contenteditable>20</span> at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>7%</span>, someone starting at
+        <span class="var" data-key="a2" contenteditable>30</span> must put away
+        <span class="out" data-out="required">$0</span> every month,
+        <span class="out" data-out="ratio">0×</span> as much.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ VIII · REACHING A GOAL ============ -->
+  <section class="mt-16 md:mt-24">
+    <div class="flex items-baseline gap-4">
+      <span class="numeral text-2xl">VIII</span>
+      <div>
+        <p class="eyebrow">Reaching a goal</p>
+        <h2 class="serif italic text-2xl md:text-[1.7rem] mt-1">Working backwards from the number you want</h2>
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <p class="sentence row py-6" data-calc="goalMonthly">
+        To reach <span class="var" data-key="goal" data-prefix="$" contenteditable>$50,000</span> in
+        <span class="var" data-key="years" contenteditable>10</span> years at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>7%</span>, you need to save
+        <span class="out" data-out="pm">$0</span> a month.
+      </p>
+
+      <p class="sentence row py-6" data-calc="goalMillion">
+        Hitting <span class="var" data-key="goal" data-prefix="$" contenteditable>$1,000,000</span> by age
+        <span class="var" data-key="retire" contenteditable>65</span> at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>8%</span> takes
+        <span class="out" data-out="pm1">$0</span> a month if you start at
+        <span class="var" data-key="a1" contenteditable>30</span>, but
+        <span class="out" data-out="pm2">$0</span> a month if you wait until
+        <span class="var" data-key="a2" contenteditable>40</span>.
+      </p>
+
+      <p class="sentence row py-6" data-calc="goalWeekly">
+        Put weekly: <span class="var" data-key="goal" data-prefix="$" contenteditable>$1,000,000</span> in
+        <span class="var" data-key="years" contenteditable>40</span> years at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>7%</span> is
+        <span class="out" data-out="pw">$0</span> a week, about
+        <span class="out" data-out="pd">$0</span> a day.
+      </p>
+
+      <p class="sentence row py-6" data-calc="goalDownpayment">
+        A <span class="var" data-key="goal" data-prefix="$" contenteditable>$30,000</span> down payment in
+        <span class="var" data-key="years" contenteditable>5</span> years at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>4%</span> means setting aside
+        <span class="out" data-out="pm">$0</span> a month; under the mattress, it would take
+        <span class="out" data-out="flat">$0</span>.
+      </p>
+
+      <p class="sentence row py-6" data-calc="goalHeadstart">
+        Already holding <span class="var" data-key="start" data-prefix="$" contenteditable>$10,000</span>? Then reaching
+        <span class="var" data-key="goal" data-prefix="$" contenteditable>$100,000</span> in
+        <span class="var" data-key="years" contenteditable>15</span> years at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>7%</span> needs only
+        <span class="out" data-out="pm">$0</span> a month, instead of
+        <span class="out" data-out="pmNone">$0</span> from zero.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ IX · THE BIG WINS ============ -->
+  <section class="mt-16 md:mt-24">
+    <div class="flex items-baseline gap-4">
+      <span class="numeral text-2xl">IX</span>
+      <div>
+        <p class="eyebrow">The big wins</p>
+        <h2 class="serif italic text-2xl md:text-[1.7rem] mt-1">The skeptic's view: decisions beat lattes</h2>
+      </div>
+    </div>
+    <p class="mt-4 text-[.95rem] leading-relaxed text-[color:var(--ink-soft)] max-w-xl">
+      A fair objection to everything above: a handful of big decisions can outweigh years of small sacrifices.
+    </p>
+
+    <div class="mt-8">
+      <p class="sentence row py-6" data-calc="carDeal">
+        Negotiate <span class="var" data-key="save" data-prefix="$" contenteditable>$1,000</span> off your next car and you've paid for
+        <span class="out" data-out="lattes">0</span> lattes at
+        <span class="var" data-key="price" data-prefix="$" contenteditable>$5</span> each, almost
+        <span class="out" data-out="years">0</span> years of one every weekday morning.
+      </p>
+
+      <p class="sentence row py-6" data-calc="howManyLattes">
+        How many lattes is that, anyway? A
+        <span class="var" data-key="amt" data-prefix="$" contenteditable>$2,500</span> impulse purchase equals
+        <span class="out" data-out="lattes">0</span> lattes at
+        <span class="var" data-key="price" data-prefix="$" contenteditable>$5</span>, one every day for
+        <span class="out" data-out="years">0</span> years.
+      </p>
+
+      <p class="sentence row py-6" data-calc="salaryNegotiation">
+        Negotiating a salary just <span class="var" data-key="raise" data-prefix="$" contenteditable>$5,000</span> higher, invested at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>7%</span> every year for
+        <span class="var" data-key="years" contenteditable>30</span> years, becomes
+        <span class="out" data-out="fv">$0</span>, the biggest latte of all.
+      </p>
+
+      <p class="sentence row py-6" data-calc="overpay">
+        Overpay <span class="var" data-key="amt" data-prefix="$" contenteditable>$20,000</span> on a house, at a
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>7%</span> opportunity cost over
+        <span class="var" data-key="years" contenteditable>30</span> years, and you've lost
+        <span class="out" data-out="fv">$0</span>, equal to
+        <span class="out" data-out="latteYears">0</span> years of a daily
+        <span class="var" data-key="price" data-prefix="$" contenteditable>$5</span> latte habit.
+      </p>
+
+      <p class="sentence row py-6" data-calc="rebuttal">
+        And yet: a <span class="var" data-key="price" data-prefix="$" contenteditable>$5</span> coffee,
+        <span class="var" data-key="days" contenteditable>300</span> days a year, is still
+        <span class="out" data-out="perYear">$0</span>. That's
+        <span class="out" data-out="pct">0%</span> of a
+        <span class="var" data-key="income" data-prefix="$" contenteditable>$50,000</span> income. The honest answer is to do both: win the big negotiations <em>and</em> mind the habits.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ X · INVESTING BEHAVIOR ============ -->
+  <section class="mt-16 md:mt-24">
+    <div class="flex items-baseline gap-4">
+      <span class="numeral text-2xl">X</span>
+      <div>
+        <p class="eyebrow">Investing behavior</p>
+        <h2 class="serif italic text-2xl md:text-[1.7rem] mt-1">How you invest, not just how much</h2>
+      </div>
+    </div>
+    <p class="mt-4 text-[.95rem] leading-relaxed text-[color:var(--ink-soft)] max-w-xl">
+      Slightly more advanced: three classic timing dilemmas, reduced to arithmetic.
+    </p>
+
+    <div class="mt-8">
+      <p class="sentence row py-6" data-calc="lumpVsDca">
+        Hand a <span class="var" data-key="amt" data-prefix="$" contenteditable>$12,000</span> windfall to the market at once at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>8%</span> and it's
+        <span class="out" data-out="lump">$0</span> after
+        <span class="var" data-key="years" contenteditable>10</span> years. Drip it in over
+        <span class="var" data-key="months" contenteditable>12</span> months instead and you end with
+        <span class="out" data-out="dca">$0</span>, a
+        <span class="out" data-out="gap">$0</span> price for the comfort of averaging in.
+      </p>
+
+      <p class="sentence row py-6" data-calc="bestDays">
+        Stay fully invested at the market's historical
+        <span class="var" data-key="r1" data-suffix="%" contenteditable>5.6%</span> and
+        <span class="var" data-key="p" data-prefix="$" contenteditable>$10,000</span> becomes
+        <span class="out" data-out="fv1">$0</span> over
+        <span class="var" data-key="years" contenteditable>20</span> years, but investors who missed just the
+        <span class="var" data-key="days" contenteditable>10</span> best days earned about
+        <span class="var" data-key="r2" data-suffix="%" contenteditable>2%</span>, ending with
+        <span class="out" data-out="fv2">$0</span>. Half the outcome hid in a handful of days you can't predict.
+      </p>
+
+      <p class="sentence row py-6" data-calc="waitForDip">
+        Waiting in cash for a <span class="var" data-key="dip" data-suffix="%" contenteditable>10%</span> dip while the market compounds at
+        <span class="var" data-key="growth" data-suffix="%" contenteditable>8%</span> only pays off if the dip arrives within
+        <span class="out" data-out="breakeven">0</span> years. After that, the "expensive" market you refused to buy is still cheaper than your patience.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ XI · HOUSING ============ -->
+  <section class="mt-16 md:mt-24">
+    <div class="flex items-baseline gap-4">
+      <span class="numeral text-2xl">XI</span>
+      <div>
+        <p class="eyebrow">Housing</p>
+        <h2 class="serif italic text-2xl md:text-[1.7rem] mt-1">The biggest numbers most people ever touch</h2>
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <p class="sentence row py-6" data-calc="rentVsBuy">
+        A <span class="var" data-key="price" data-prefix="$" contenteditable>$300,000</span> house appreciating
+        <span class="var" data-key="apprec" data-suffix="%" contenteditable>3%</span> a year is worth
+        <span class="out" data-out="house">$0</span> after
+        <span class="var" data-key="years" contenteditable>20</span> years. Renting instead, and investing the
+        <span class="var" data-key="down" data-prefix="$" contenteditable>$60,000</span> down payment plus
+        <span class="var" data-key="monthly" data-prefix="$" contenteditable>$500</span> a month of ownership savings at
+        <span class="var" data-key="irate" data-suffix="%" contenteditable>8%</span>, grows to
+        <span class="out" data-out="renter">$0</span>. The winner lives entirely inside these assumptions.
+      </p>
+
+      <p class="sentence row py-6" data-calc="mortgage1530">
+        On a <span class="var" data-key="loan" data-prefix="$" contenteditable>$300,000</span> loan at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>6%</span>, the
+        <span class="var" data-key="y2" contenteditable>30</span>-year mortgage costs
+        <span class="out" data-out="pmt2">$0</span> a month and
+        <span class="out" data-out="int2">$0</span> in total interest; the
+        <span class="var" data-key="y1" contenteditable>15</span>-year costs
+        <span class="out" data-out="pmt1">$0</span> a month but only
+        <span class="out" data-out="int1">$0</span>. The shorter loan buys back
+        <span class="out" data-out="saved">$0</span>.
+      </p>
+
+      <p class="sentence row py-6" data-calc="downPayment">
+        Put less down and invest the difference: keeping
+        <span class="var" data-key="diff" data-prefix="$" contenteditable>$45,000</span> in the market at
+        <span class="var" data-key="irate" data-suffix="%" contenteditable>8%</span> grows to
+        <span class="out" data-out="grown">$0</span> over
+        <span class="var" data-key="years" contenteditable>30</span> years, while borrowing that same amount at
+        <span class="var" data-key="lrate" data-suffix="%" contenteditable>6%</span> costs
+        <span class="out" data-out="extraInterest">$0</span> more in interest. The gap between the two rates decides who wins.
+      </p>
+
+      <p class="sentence row py-6" data-calc="overpayInvest">
+        Overpaying the mortgage by <span class="var" data-key="extra" data-prefix="$" contenteditable>$200</span> a month is a guaranteed return at your loan's
+        <span class="var" data-key="mrate" data-suffix="%" contenteditable>6%</span>, worth
+        <span class="out" data-out="safe">$0</span> over
+        <span class="var" data-key="years" contenteditable>25</span> years. The same money invested at
+        <span class="var" data-key="irate" data-suffix="%" contenteditable>8%</span> reaches
+        <span class="out" data-out="risky">$0</span>: a
+        <span class="out" data-out="edge">$0</span> edge, paid for in risk.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ XII · DEBT ============ -->
+  <section class="mt-16 md:mt-24">
+    <div class="flex items-baseline gap-4">
+      <span class="numeral text-2xl">XII</span>
+      <div>
+        <p class="eyebrow">Debt</p>
+        <h2 class="serif italic text-2xl md:text-[1.7rem] mt-1">Compounding, working against you</h2>
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <p class="sentence row py-6" data-calc="ccMinimum">
+        On a <span class="var" data-key="balance" data-prefix="$" contenteditable>$5,000</span> card at
+        <span class="var" data-key="apr" data-suffix="%" contenteditable>24%</span> APR, the interest alone is
+        <span class="out" data-out="intOnly">$0</span> a month; pay less than that and the debt is immortal. Pay
+        <span class="var" data-key="pay1" data-prefix="$" contenteditable>$150</span> and you're free in
+        <span class="out" data-out="m1">0</span> months with
+        <span class="out" data-out="i1">$0</span> of interest;
+        <span class="var" data-key="pay2" data-prefix="$" contenteditable>$250</span> takes
+        <span class="out" data-out="m2">0</span> months and
+        <span class="out" data-out="i2">$0</span>.
+      </p>
+
+      <p class="sentence row py-6" data-calc="studentLoan">
+        Stretch a <span class="var" data-key="loan" data-prefix="$" contenteditable>$30,000</span> student loan at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>5%</span> from
+        <span class="var" data-key="y1" contenteditable>10</span> years to
+        <span class="var" data-key="y2" contenteditable>25</span> and the payment falls from
+        <span class="out" data-out="pmt1">$0</span> to
+        <span class="out" data-out="pmt2">$0</span> a month, but the total interest jumps from
+        <span class="out" data-out="int1">$0</span> to
+        <span class="out" data-out="int2">$0</span>.
+      </p>
+
+      <p class="sentence row py-6" data-calc="carLoan">
+        Finance a <span class="var" data-key="price" data-prefix="$" contenteditable>$25,000</span> car at
+        <span class="var" data-key="rate" data-suffix="%" contenteditable>8%</span> for
+        <span class="var" data-key="years" contenteditable>5</span> years:
+        <span class="out" data-out="pmt">$0</span> a month, and the car really costs
+        <span class="out" data-out="total">$0</span>; the
+        <span class="out" data-out="interest">$0</span> of interest is
+        <span class="out" data-out="pct">0%</span> of the sticker price.
+      </p>
+
+      <p class="sentence row py-6" data-calc="goodBadDebt">
+        Carrying <span class="var" data-key="amt" data-prefix="$" contenteditable>$10,000</span> at a mortgage-like
+        <span class="var" data-key="r1" data-suffix="%" contenteditable>4%</span> costs
+        <span class="out" data-out="c1">$0</span> a year; the same balance on a
+        <span class="var" data-key="r2" data-suffix="%" contenteditable>20%</span> credit card costs
+        <span class="out" data-out="c2">$0</span>,
+        <span class="out" data-out="ratio">0×</span> as much. "Debt" is one word for two very different animals.
+      </p>
+
+      <p class="sentence row py-6" data-calc="prepayVsInvest">
+        Putting <span class="var" data-key="extra" data-prefix="$" contenteditable>$200</span> a month against a
+        <span class="var" data-key="drate" data-suffix="%" contenteditable>20%</span> debt is a guaranteed return at that rate, worth
+        <span class="out" data-out="debtWorth">$0</span> over
+        <span class="var" data-key="years" contenteditable>5</span> years, while the same money invested at
+        <span class="var" data-key="irate" data-suffix="%" contenteditable>8%</span> reaches only
+        <span class="out" data-out="investWorth">$0</span>. Kill high-interest debt first; the market can't reliably beat it.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="mt-20">
+    <div class="rule mb-8"></div>
+    <p class="eyebrow">Sources &amp; further reading</p>
+    <ul class="mt-5 space-y-3 max-w-xl">
+      <li class="text-[.85rem] leading-relaxed text-[color:var(--ink-soft)]">
+        <a href="https://store.darrenhardy.com/collections/merchandise/products/the-compound-effect" target="_blank" rel="noopener" class="src-link">The Compound Effect</a>, by Darren Hardy. Source of the four-dollar-a-day coffee example and the page's central theme: small choices, repeated consistently over time, can produce large results.
+      </li>
+      <li class="text-[.85rem] leading-relaxed text-[color:var(--ink-soft)]">
+        <a href="https://davidbach.com/books" target="_blank" rel="noopener" class="src-link">The Latte Factor &amp; The Automatic Millionaire</a>, by David Bach. The daily-spending and automatic-saving framework behind the coffee examples and the $5-versus-$10-a-day comparison in section II.
+      </li>
+      <li class="text-[.85rem] leading-relaxed text-[color:var(--ink-soft)]">
+        <a href="https://www.mathsisfun.com/money/present-value.html" target="_blank" rel="noopener" class="src-link">Present Value on Math is Fun</a>. The worked $1,100 / $500 / $900 discounting examples in section IV.
+      </li>
+      <li class="text-[.85rem] leading-relaxed text-[color:var(--ink-soft)]">
+        <a href="https://www.mrmoneymustache.com/2012/01/13/the-shockingly-simple-math-behind-early-retirement/" target="_blank" rel="noopener" class="src-link">The Shockingly Simple Math Behind Early Retirement</a>, by Mr. Money Mustache. Further reading on how savings rate and spending level shape the time required to reach financial independence.
+      </li>
+      <li class="text-[.85rem] leading-relaxed text-[color:var(--ink-soft)]">
+        The latte-factor debate: <a href="https://www.theguardian.com/money/us-money-blog/2013/aug/13/coffee-costs-savings-myth" target="_blank" rel="noopener" class="src-link">the structural critique</a> and <a href="https://www.chicagobooth.edu/review/how-to-get-yourself-skip-that-latte-save-money" target="_blank" rel="noopener" class="src-link">Chicago Booth Review on the behavioral case</a>. Context for section IX's conclusion that large financial decisions and recurring habits can both matter.
+      </li>
+      <li class="text-[.85rem] leading-relaxed text-[color:var(--ink-soft)]">
+        <a href="https://am.jpmorgan.com/us/en/asset-management/institutional/insights/market-insights/market-updates/on-the-minds-of-investors/why-should-i-stay-invested/" target="_blank" rel="noopener" class="src-link">J.P. Morgan Asset Management's 1999–2018 stay-invested analysis</a>. The section X defaults reproduce its S&amp;P 500 comparison: 5.6% annualized when fully invested versus 2.0% after removing the ten best days. The <a href="https://am.jpmorgan.com/us/en/asset-management/adv/insights/retirement-insights/guide-to-retirement/" target="_blank" rel="noopener" class="src-link">current Guide to Retirement</a> rolls the period forward, so its figures differ.
+      </li>
+      <li class="text-[.85rem] leading-relaxed text-[color:var(--ink-soft)]">
+        Calculator references for cross-checking scenarios: <a href="https://financialmentor.com/calculator/compound-interest-calculator" target="_blank" rel="noopener" class="src-link">Financial Mentor</a>, <a href="https://www.calculator.net/compound-interest-calculator.html" target="_blank" rel="noopener" class="src-link">Calculator.net</a>, <a href="https://www.nesteggly.com/retirement-calculator" target="_blank" rel="noopener" class="src-link">Nesteggly's retirement calculator</a>, and the <a href="https://www.investor.gov/financial-tools-calculators/calculators/compound-interest-calculator" target="_blank" rel="noopener" class="src-link">SEC compound interest calculator</a>.
+      </li>
+    </ul>
+
+    <div class="rule my-8"></div>
+    <p class="mono text-[.72rem] leading-relaxed text-[color:var(--ink-soft)] max-w-xl">
+      Assumptions: returns are nominal and constant; contributions are made at the end of each period; habit frequencies are editable where shown, otherwise annualized × 365; taxes are ignored except where shown; the currency selector changes symbols only, not amounts. Illustrative arithmetic, not financial advice.
+    </p>
+    <p class="mono text-[.72rem] leading-relaxed text-[color:var(--ink-soft)] max-w-xl mt-4">
+      This interactive reader is open source. View, inspect, or contribute to the
+      <a href="https://github.com/alexadam/compound-effect" target="_blank" rel="noopener noreferrer" class="src-link">source code on GitHub</a>.
+    </p>
+  </footer>
+</main>
+
+<script>
+/* ---------- formatting ---------- */
+const nf0 = new Intl.NumberFormat('en-US', {maximumFractionDigits: 0});
+const nf2 = new Intl.NumberFormat('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const nfSmart = v => (Math.abs(v) < 1000 && Math.abs(v % 1) > 1e-9) ? nf2.format(v) : nf0.format(v);
+
+const FMT = {
+  money0: v => nf0.format(Math.round(v)),
+  money2: v => nf2.format(v),
+  num1:   v => (Math.round(v * 10) / 10).toString(),
+  pct0:   v => nf0.format(Math.round(v)),
+  pct2:   v => nf2.format(v),
+};
+
+/* ---------- currency ---------- */
+/* sym = what's shown; suffix = symbol trails the number (12 lei, not lei 12) */
+const CURRENCIES = {
+  USD: ['$',    'US dollar'],            EUR: ['\u20AC',    'Euro'],
+  GBP: ['\u00A3',    'Pound sterling'],       JPY: ['\u00A5',    'Japanese yen'],
+  CHF: ['CHF',  'Swiss franc', 1],       CAD: ['C$',   'Canadian dollar'],
+  AUD: ['A$',   'Australian dollar'],    NZD: ['NZ$',  'New Zealand dollar'],
+  SGD: ['S$',   'Singapore dollar'],     HKD: ['HK$',  'Hong Kong dollar'],
+  CNY: ['CN\u00A5',  'Chinese yuan'],         TWD: ['NT$',  'New Taiwan dollar'],
+  KRW: ['\u20A9',    'South Korean won'],     INR: ['\u20B9',    'Indian rupee'],
+  PKR: ['\u20A8',    'Pakistani rupee'],      BDT: ['\u09F3',    'Bangladeshi taka'],
+  IDR: ['Rp',   'Indonesian rupiah'],    MYR: ['RM',   'Malaysian ringgit'],
+  THB: ['\u0E3F',    'Thai baht'],            PHP: ['\u20B1',    'Philippine peso'],
+  VND: ['\u20AB',    'Vietnamese dong', 1],   MXN: ['MX$',  'Mexican peso'],
+  BRL: ['R$',   'Brazilian real'],       ARS: ['AR$',  'Argentine peso'],
+  CLP: ['CLP$', 'Chilean peso'],         COP: ['COP$', 'Colombian peso'],
+  PEN: ['S/',   'Peruvian sol'],         SEK: ['kr',   'Swedish krona', 1],
+  NOK: ['kr',   'Norwegian krone', 1],   DKK: ['kr',   'Danish krone', 1],
+  ISK: ['kr',   'Icelandic kr\u00F3na', 1],   PLN: ['z\u0142',   'Polish z\u0142oty', 1],
+  CZK: ['K\u010D',   'Czech koruna', 1],      HUF: ['Ft',   'Hungarian forint', 1],
+  RON: ['lei',  'Romanian leu', 1],      BGN: ['\u043B\u0432',   'Bulgarian lev', 1],
+  UAH: ['\u20B4',    'Ukrainian hryvnia'],    RUB: ['\u20BD',    'Russian ruble'],
+  TRY: ['\u20BA',    'Turkish lira'],         ILS: ['\u20AA',    'Israeli shekel'],
+  AED: ['AED',  'UAE dirham', 1],        SAR: ['SAR',  'Saudi riyal', 1],
+  ZAR: ['R',    'South African rand'],   NGN: ['\u20A6',    'Nigerian naira'],
+  KES: ['KSh',  'Kenyan shilling'],      EGP: ['E\u00A3',   'Egyptian pound'],
+  MAD: ['MAD',  'Moroccan dirham', 1],
+};
+
+/* grouping only affects the dropdown's <optgroup> labels */
+const CUR_GROUPS = [
+  ['Major',         ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'NZD']],
+  ['Europe',        ['SEK', 'NOK', 'DKK', 'ISK', 'PLN', 'CZK', 'HUF', 'RON', 'BGN', 'UAH', 'RUB', 'TRY']],
+  ['Asia-Pacific',  ['CNY', 'HKD', 'TWD', 'KRW', 'SGD', 'INR', 'PKR', 'BDT', 'IDR', 'MYR', 'THB', 'PHP', 'VND']],
+  ['Americas',      ['MXN', 'BRL', 'ARS', 'CLP', 'COP', 'PEN']],
+  ['Middle East & Africa', ['ILS', 'AED', 'SAR', 'ZAR', 'NGN', 'KES', 'EGP', 'MAD']],
+];
+
+let CUR = { code: 'USD', sym: '$', suffix: false };
+const curFmt = t => CUR.suffix ? t + '\u00A0' + CUR.sym : CUR.sym + t;
+
+/* ---------- math ---------- */
+const fvLump = (p, r, n) => p * Math.pow(1 + r, n);
+const fvAnnuity = (c, r, n) => r === 0 ? c * n : c * ((Math.pow(1 + r, n) - 1) / r);
+const fvMonthly = (pm, annualR, years) => {
+  const i = annualR / 12, m = years * 12;
+  return i === 0 ? pm * m : pm * ((Math.pow(1 + i, m) - 1) / i);
+};
+const fvWeekly = (pw, annualR, years) => {
+  const i = annualR / 52, m = years * 52;
+  return i === 0 ? pw * m : pw * ((Math.pow(1 + i, m) - 1) / i);
+};
+const yearsToGoal = (annualC, r, goal) => {
+  if (annualC <= 0 || goal <= 0) return 0;
+  if (r === 0) return goal / annualC;
+  return Math.log(1 + (goal * r) / annualC) / Math.log(1 + r);
+};
+const pmtFor = (P, annualR, years) => {
+  const i = annualR / 12, m = years * 12;
+  if (m <= 0) return 0;
+  return i === 0 ? P / m : P * i / (1 - Math.pow(1 + i, -m));
+};
+const monthsToPayoff = (P, annualR, pay) => {
+  const i = annualR / 12;
+  if (pay <= P * i) return Infinity;
+  return i === 0 ? P / pay : Math.log(pay / (pay - P * i)) / Math.log(1 + i);
+};
+
+/* ---------- calculators: vars in → outs out ---------- */
+const CALCS = {
+  hero(v) {
+    const annual = v.cost * v.freq, r = v.rate / 100;
+    return {
+      grown: ['$', FMT.money0(fvAnnuity(annual, r, v.years))],
+      spent: ['$', FMT.money0(annual * v.years)],
+    };
+  },
+  coffee5(v) {
+    const perYear = v.price * v.days;
+    return { perYear: ['$', FMT.money0(perYear)], total: ['$', FMT.money0(perYear * v.years)] };
+  },
+  latte4(v) {
+    const year = v.price * v.dpw * 52;
+    return {
+      week: ['$', FMT.money0(v.price * v.dpw)],
+      month: ['$', FMT.money0(year / 12)],
+      year: ['$', FMT.money0(year)],
+    };
+  },
+  workday(v) {
+    const cups = v.dpw * v.weeks;
+    const year = cups * v.price;
+    return {
+      cups: ['', FMT.money0(cups)],
+      daily: ['$', FMT.money2(year / 365)],
+      naive: ['$', FMT.money2(v.price)],
+      year: ['$', FMT.money0(year)],
+    };
+  },
+  latte2(v) {
+    return { total: ['$', FMT.money0(v.price * v.dpw * 52 * v.years)] };
+  },
+  smoker(v) {
+    const y = v.pack * 365;
+    return { year: ['$', FMT.money0(y)], decade: ['$', FMT.money0(y * 10)] };
+  },
+  latefee(v) {
+    return { year: ['$', FMT.money0(v.fee * 12)], decade: ['$', FMT.money0(v.fee * 120)] };
+  },
+  dollarday(v) {
+    return { fv: ['$', FMT.money0(fvAnnuity(v.amt * 365, v.rate / 100, v.years))] };
+  },
+  nest(v) {
+    const fv = v.start * Math.pow(1 + v.rate / 100 / 12, v.years * 12) +
+      fvMonthly(v.monthly, v.rate / 100, v.years);
+    return { fv: ['$', FMT.money0(fv)] };
+  },
+  lump5(v) {
+    return { fv: ['$', FMT.money2(fvLump(v.p, v.rate / 100, v.years))] };
+  },
+  monthly150(v) {
+    return { fv: ['$', FMT.money0(fvMonthly(v.pm, v.rate / 100, v.years))] };
+  },
+  millionaire(v) {
+    const y1 = yearsToGoal(v.d1 * 365, v.rate / 100, v.goal);
+    const y2 = yearsToGoal(v.d2 * 365, v.rate / 100, v.goal);
+    return { y1: ['', FMT.num1(y1)], sooner: ['', FMT.num1(Math.max(y1 - y2, 0))] };
+  },
+  sp500(v) {
+    return { fv: ['$', FMT.money0(fvLump(v.p, v.rate / 100, v.years))] };
+  },
+  hotstock(v) {
+    const fv = fvLump(v.p, v.rate / 100, v.years);
+    return { fv: ['$', FMT.money0(fv)], ret: ['', FMT.pct0((fv / v.p - 1) * 100) + '%'] };
+  },
+  mortgage(v) {
+    const fv1 = fvAnnuity(v.annual, v.rate / 100, v.years);
+    const fv2 = fv1 * Math.pow(1 + v.rate / 100, v.extra);
+    return { fv1: ['$', FMT.money0(fv1)], fv2: ['$', FMT.money0(fv2)] };
+  },
+  tworates(v) {
+    return {
+      fv1: ['$', FMT.money0(fvLump(v.p, v.r1 / 100, v.years))],
+      fv2: ['$', FMT.money0(fvLump(v.p, v.r2 / 100, v.years))],
+    };
+  },
+  simplecompound(v) {
+    return {
+      simple: ['$', FMT.money0(v.p * (v.rate / 100) * v.years)],
+      compound: ['$', FMT.money0(v.p * (Math.pow(1 + v.rate / 100, v.years) - 1))],
+    };
+  },
+  pv1(v)  { return { pv: ['$', FMT.money0(v.fv / (1 + v.rate / 100))] }; },
+  pv2(v)  { return { pv: ['$', FMT.money2(v.fv / (1 + v.rate / 100))] }; },
+  pv3(v)  { return { pv: ['$', FMT.money2(v.fv / Math.pow(1 + v.rate / 100, v.years))] }; },
+  pv4(v)  { return { pv: ['$', FMT.money2(v.fv / Math.pow(1 + v.rate / 100, v.years))] }; },
+  dollarcost(v) {
+    return { future: ['$', FMT.money2(v.amt * Math.pow(1 + v.rate / 100, v.years))] };
+  },
+  item(v) {
+    return { future: ['$', FMT.money2(v.price * Math.pow(1 + v.infl / 100, v.years))] };
+  },
+  mattress(v) {
+    return { real: ['$', FMT.money2(v.amt / Math.pow(1 + v.infl / 100, v.years))] };
+  },
+  retire(v) {
+    return { required: ['$', FMT.money0(v.need * Math.pow(1 + v.infl / 100, v.years))] };
+  },
+  apy(v) {
+    const nominal = v.p * Math.pow(1 + v.apy / 100, v.years);
+    return {
+      nominal: ['$', FMT.money2(nominal)],
+      real: ['$', FMT.money2(nominal / Math.pow(1 + v.infl / 100, v.years))],
+    };
+  },
+  nestegg(v) {
+    return { real: ['$', FMT.money0(v.amt / Math.pow(1 + v.infl / 100, v.years))] };
+  },
+  minutes(v) {
+    const h = v.min * 365 / 60;
+    return {
+      hours: ['', FMT.num1(h)],
+      workdays: ['', FMT.num1(h / 8)],
+      zeroHours: ['', FMT.num1(v.zero * 365 / 60)],
+    };
+  },
+  scrolling(v) {
+    const h = v.hrs * 365;
+    return { hours: ['', FMT.money0(h)], days: ['', FMT.num1(h / 24)] };
+  },
+  reading(v) {
+    const total = v.pages * 365;
+    return {
+      total: ['', FMT.money0(total)],
+      books: ['', FMT.money0(v.perBook > 0 ? total / v.perBook : 0)],
+    };
+  },
+  mastery(v) {
+    const yrs = d => d > 0 ? v.goal / (d * 365) : 0;
+    return { years: ['', FMT.num1(yrs(v.hpd))], years2: ['', FMT.num1(yrs(v.hpd2))] };
+  },
+  wage(v) {
+    const hourly = v.hours > 0 ? v.salary / v.hours : 0;
+    return {
+      hourly: ['$', FMT.money2(hourly)],
+      minutes: ['', FMT.num1(hourly > 0 ? (v.price / hourly) * 60 : 0)],
+    };
+  },
+  headstart(v) {
+    const y1 = Math.max(v.retire - v.a1, 0), y2 = Math.max(v.retire - v.a2, 0);
+    const fv1 = fvMonthly(v.pm, v.rate / 100, y1);
+    const fv2 = fvMonthly(v.pm, v.rate / 100, y2);
+    return {
+      fv1: ['$', FMT.money0(fv1)],
+      fv2: ['$', FMT.money0(fv2)],
+      diff: ['$', FMT.money0(fv1 - fv2)],
+      delay: ['', FMT.num1(v.a2 - v.a1)],
+    };
+  },
+  headstart9(v) {
+    const y1 = Math.max(v.retire - v.a1, 0), y2 = Math.max(v.retire - v.a2, 0);
+    const diff = fvMonthly(v.pm, v.rate / 100, y1) - fvMonthly(v.pm, v.rate / 100, y2);
+    return {
+      diff: ['$', FMT.money0(diff)],
+      extra: ['$', FMT.money0(Math.max(v.a2 - v.a1, 0) * 12 * v.pm)],
+    };
+  },
+  babyfund(v) {
+    return { fv: ['$', FMT.money0(fvMonthly(v.pm, v.rate / 100, v.age))] };
+  },
+  delaycost(v) {
+    const y = Math.max(v.retire - v.age, 0);
+    const fv = fvMonthly(v.pm, v.rate / 100, y);
+    const fvLate = fvMonthly(v.pm, v.rate / 100, Math.max(y - 1, 0));
+    return { fv: ['$', FMT.money0(fv)], cost: ['$', FMT.money0(fv - fvLate)] };
+  },
+  catchup(v) {
+    const y1 = Math.max(v.retire - v.a1, 0), y2 = Math.max(v.retire - v.a2, 0);
+    const target = fvMonthly(v.pm, v.rate / 100, y1);
+    const factor = fvMonthly(1, v.rate / 100, y2);       // FV of $1/month
+    const required = factor > 0 ? target / factor : 0;
+    return {
+      required: ['$', FMT.money2(required)],
+      ratio: ['', FMT.num1(v.pm > 0 ? required / v.pm : 0) + '×'],
+    };
+  },
+  taxes(v) {
+    const eff = v.apy * (1 - v.tax / 100);
+    const nominal = v.p * Math.pow(1 + eff / 100, v.years);
+    return {
+      effective: ['', FMT.pct2(eff) + '%'],
+      real: ['$', FMT.money2(nominal / Math.pow(1 + v.infl / 100, v.years))],
+    };
+  },
+  goalMonthly(v) {
+    const factor = fvMonthly(1, v.rate / 100, v.years);
+    return { pm: ['$', FMT.money2(factor > 0 ? v.goal / factor : 0)] };
+  },
+  goalMillion(v) {
+    const req = a => {
+      const f = fvMonthly(1, v.rate / 100, Math.max(v.retire - a, 0));
+      return f > 0 ? v.goal / f : 0;
+    };
+    return { pm1: ['$', FMT.money0(req(v.a1))], pm2: ['$', FMT.money0(req(v.a2))] };
+  },
+  goalWeekly(v) {
+    const factor = fvWeekly(1, v.rate / 100, v.years);
+    const pw = factor > 0 ? v.goal / factor : 0;
+    return { pw: ['$', FMT.money2(pw)], pd: ['$', FMT.money2(pw / 7)] };
+  },
+  goalDownpayment(v) {
+    const factor = fvMonthly(1, v.rate / 100, v.years);
+    return {
+      pm: ['$', FMT.money2(factor > 0 ? v.goal / factor : 0)],
+      flat: ['$', FMT.money2(v.years > 0 ? v.goal / (v.years * 12) : 0)],
+    };
+  },
+  goalHeadstart(v) {
+    const factor = fvMonthly(1, v.rate / 100, v.years);
+    const grownStart = v.start * Math.pow(1 + v.rate / 100 / 12, v.years * 12);
+    const remaining = Math.max(v.goal - grownStart, 0);
+    return {
+      pm: ['$', FMT.money2(factor > 0 ? remaining / factor : 0)],
+      pmNone: ['$', FMT.money2(factor > 0 ? v.goal / factor : 0)],
+    };
+  },
+  carDeal(v) {
+    const lattes = v.price > 0 ? v.save / v.price : 0;
+    return { lattes: ['', FMT.money0(lattes)], years: ['', FMT.num1(lattes / 260)] };
+  },
+  howManyLattes(v) {
+    const lattes = v.price > 0 ? v.amt / v.price : 0;
+    return { lattes: ['', FMT.money0(lattes)], years: ['', FMT.num1(lattes / 365)] };
+  },
+  salaryNegotiation(v) {
+    return { fv: ['$', FMT.money0(fvAnnuity(v.raise, v.rate / 100, v.years))] };
+  },
+  overpay(v) {
+    const fv = fvLump(v.amt, v.rate / 100, v.years);
+    const latteAnnual = v.price * 365;
+    return {
+      fv: ['$', FMT.money0(fv)],
+      latteYears: ['', FMT.money0(latteAnnual > 0 ? fv / latteAnnual : 0)],
+    };
+  },
+  rebuttal(v) {
+    const perYear = v.price * v.days;
+    return {
+      perYear: ['$', FMT.money0(perYear)],
+      pct: ['', FMT.num1(v.income > 0 ? (perYear / v.income) * 100 : 0) + '%'],
+    };
+  },
+  lumpVsDca(v) {
+    const r = v.rate / 100;
+    const lump = fvLump(v.amt, r, v.years);
+    const dcaYears = Math.min(v.months / 12, v.years);
+    const remaining = Math.max(v.years - dcaYears, 0);
+    const dca = fvMonthly(v.months > 0 ? v.amt / v.months : 0, r, dcaYears) *
+                Math.pow(1 + r / 12, remaining * 12);
+    return {
+      lump: ['$', FMT.money0(lump)],
+      dca: ['$', FMT.money0(dca)],
+      gap: ['$', FMT.money0(lump - dca)],
+    };
+  },
+  bestDays(v) {
+    return {
+      fv1: ['$', FMT.money0(fvLump(v.p, v.r1 / 100, v.years))],
+      fv2: ['$', FMT.money0(fvLump(v.p, v.r2 / 100, v.years))],
+    };
+  },
+  waitForDip(v) {
+    const d = v.dip / 100, g = v.growth / 100;
+    const t = (d > 0 && d < 1 && g > 0) ? -Math.log(1 - d) / Math.log(1 + g) : 0;
+    return { breakeven: ['', FMT.num1(t)] };
+  },
+  rentVsBuy(v) {
+    const house = fvLump(v.price, v.apprec / 100, v.years);
+    const renter = v.down * Math.pow(1 + v.irate / 100 / 12, v.years * 12) +
+                   fvMonthly(v.monthly, v.irate / 100, v.years);
+    return { house: ['$', FMT.money0(house)], renter: ['$', FMT.money0(renter)] };
+  },
+  mortgage1530(v) {
+    const p1 = pmtFor(v.loan, v.rate / 100, v.y1);
+    const p2 = pmtFor(v.loan, v.rate / 100, v.y2);
+    const i1 = p1 * v.y1 * 12 - v.loan;
+    const i2 = p2 * v.y2 * 12 - v.loan;
+    return {
+      pmt1: ['$', FMT.money0(p1)], int1: ['$', FMT.money0(i1)],
+      pmt2: ['$', FMT.money0(p2)], int2: ['$', FMT.money0(i2)],
+      saved: ['$', FMT.money0(i2 - i1)],
+    };
+  },
+  downPayment(v) {
+    const grown = v.diff * Math.pow(1 + v.irate / 100 / 12, v.years * 12);
+    const pmt = pmtFor(v.diff, v.lrate / 100, v.years);
+    return {
+      grown: ['$', FMT.money0(grown)],
+      extraInterest: ['$', FMT.money0(pmt * v.years * 12 - v.diff)],
+    };
+  },
+  overpayInvest(v) {
+    const safe = fvMonthly(v.extra, v.mrate / 100, v.years);
+    const risky = fvMonthly(v.extra, v.irate / 100, v.years);
+    return {
+      safe: ['$', FMT.money0(safe)],
+      risky: ['$', FMT.money0(risky)],
+      edge: ['$', FMT.money0(risky - safe)],
+    };
+  },
+  ccMinimum(v) {
+    const r = v.apr / 100;
+    const payoff = pay => {
+      const n = monthsToPayoff(v.balance, r, pay);
+      if (!isFinite(n)) return { m: ['', 'never'], i: ['', 'endless'] };
+      return { m: ['', FMT.money0(Math.ceil(n))], i: ['$', FMT.money0(pay * n - v.balance)] };
+    };
+    const a = payoff(v.pay1), b = payoff(v.pay2);
+    return {
+      intOnly: ['$', FMT.money0(v.balance * r / 12)],
+      m1: a.m, i1: a.i, m2: b.m, i2: b.i,
+    };
+  },
+  studentLoan(v) {
+    const p1 = pmtFor(v.loan, v.rate / 100, v.y1);
+    const p2 = pmtFor(v.loan, v.rate / 100, v.y2);
+    return {
+      pmt1: ['$', FMT.money0(p1)], pmt2: ['$', FMT.money0(p2)],
+      int1: ['$', FMT.money0(p1 * v.y1 * 12 - v.loan)],
+      int2: ['$', FMT.money0(p2 * v.y2 * 12 - v.loan)],
+    };
+  },
+  carLoan(v) {
+    const pmt = pmtFor(v.price, v.rate / 100, v.years);
+    const total = pmt * v.years * 12;
+    const interest = total - v.price;
+    return {
+      pmt: ['$', FMT.money0(pmt)],
+      total: ['$', FMT.money0(total)],
+      interest: ['$', FMT.money0(interest)],
+      pct: ['', FMT.num1(v.price > 0 ? interest / v.price * 100 : 0) + '%'],
+    };
+  },
+  goodBadDebt(v) {
+    const c1 = v.amt * v.r1 / 100, c2 = v.amt * v.r2 / 100;
+    return {
+      c1: ['$', FMT.money0(c1)], c2: ['$', FMT.money0(c2)],
+      ratio: ['', FMT.num1(c1 > 0 ? c2 / c1 : 0) + '×'],
+    };
+  },
+  prepayVsInvest(v) {
+    return {
+      debtWorth: ['$', FMT.money0(fvMonthly(v.extra, v.drate / 100, v.years))],
+      investWorth: ['$', FMT.money0(fvMonthly(v.extra, v.irate / 100, v.years))],
+    };
+  },
+};
+
+/* ---------- wiring ---------- */
+const parseNum = el => {
+  const raw = el.textContent.replace(/[^0-9.\-]/g, '');
+  const n = parseFloat(raw);
+  return isNaN(n) ? 0 : n;
+};
+
+function readVars(block) {
+  const vals = {};
+  block.querySelectorAll('.var[data-key]').forEach(el => { vals[el.dataset.key] = parseNum(el); });
+  return vals;
+}
+
+function recompute(block) {
+  const id = block.dataset.calc;
+  const fn = CALCS[id];
+  if (!fn) return;
+  const outs = fn(readVars(block));
+  Object.entries(outs).forEach(([key, [prefix, text]]) => {
+    const el = block.querySelector(`.out[data-out="${key}"]`);
+    if (!el) return;
+    const next = prefix === '$' ? curFmt(text) : prefix + text;
+    if (el.textContent !== next) {
+      el.textContent = next;
+      el.classList.remove('pulse');
+      void el.offsetWidth;              // restart animation
+      el.classList.add('pulse');
+    }
+  });
+  if (id === 'hero') drawSpark(readVars(block));
+}
+
+function formatVar(el) {
+  const v = parseNum(el);
+  const num = nfSmart(v);
+  if (el.dataset.prefix === '$') { el.textContent = curFmt(num); return; }
+  el.textContent = (el.dataset.prefix || '') + num + (el.dataset.suffix || '');
+}
+
+document.querySelectorAll('[data-calc]').forEach(block => {
+  block.querySelectorAll('.var[data-key]').forEach(el => {
+    el.setAttribute('spellcheck', 'false');
+    el.setAttribute('inputmode', 'decimal');
+
+    el.addEventListener('focus', () => {
+      requestAnimationFrame(() => {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      });
+    });
+
+    el.addEventListener('input', () => recompute(block));
+
+    el.addEventListener('blur', () => { formatVar(el); recompute(block); });
+
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); el.blur(); return; }
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        const step = e.shiftKey ? 10 : (e.altKey ? 0.1 : 1);
+        const dir = e.key === 'ArrowUp' ? 1 : -1;
+        const next = Math.max(0, Math.round((parseNum(el) + dir * step) * 100) / 100);
+        const num = nfSmart(next);
+        el.textContent = el.dataset.prefix === '$'
+          ? curFmt(num)
+          : (el.dataset.prefix || '') + num + (el.dataset.suffix || '');
+        recompute(block);
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    });
+
+    // strip pasted formatting
+    el.addEventListener('paste', e => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9.\-]/g, '');
+      document.execCommand('insertText', false, text);
+    });
+  });
+
+  recompute(block);
+});
+
+/* ---------- hero sparkline ---------- */
+function drawSpark(v) {
+  const svg = document.getElementById('spark');
+  if (!svg) return;
+  const W = 640, H = 150, padL = 6, padR = 118, padT = 12, padB = 14;
+  const annual = v.cost * v.freq, r = v.rate / 100, N = Math.max(1, Math.round(v.years));
+
+  const grown = [0], spent = [0];
+  let b = 0;
+  for (let t = 1; t <= N; t++) {
+    b = b * (1 + r) + annual;
+    grown.push(b);
+    spent.push(annual * t);
+  }
+  const maxY = Math.max(grown[N], spent[N], 1);
+  const x = t => padL + (t / N) * (W - padL - padR);
+  const y = val => H - padB - (val / maxY) * (H - padT - padB);
+  const path = arr => arr.map((val, t) => `${t === 0 ? 'M' : 'L'}${x(t).toFixed(1)},${y(val).toFixed(1)}`).join(' ');
+
+  const fmt = n => curFmt(nf0.format(Math.round(n)));
+  svg.innerHTML = `
+    <line x1="${padL}" y1="${H - padB}" x2="${W - padR + 8}" y2="${H - padB}" stroke="#E9E7DF" stroke-width="1"/>
+    <path d="${path(spent)}" fill="none" stroke="#DFB55F" stroke-width="1.6" stroke-dasharray="4 4"/>
+    <path d="${path(grown)}" fill="none" stroke="#116B41" stroke-width="2.2" stroke-linejoin="round"/>
+    <circle cx="${x(N)}" cy="${y(grown[N])}" r="3.2" fill="#116B41"/>
+    <circle cx="${x(N)}" cy="${y(spent[N])}" r="2.6" fill="#DFB55F"/>
+    <text x="${x(N) + 8}" y="${y(grown[N]) + 4}" font-family="IBM Plex Mono, monospace" font-size="11.5" font-weight="600" fill="#116B41">${fmt(grown[N])}</text>
+    <text x="${x(N) + 8}" y="${Math.min(y(spent[N]) + 4, H - padB - 2)}" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="#9A6700">${fmt(spent[N])}</text>
+  `;
+}
+
+/* ---------- currency selector ---------- */
+(function currencySelector() {
+  const sel = document.getElementById('curmore');
+  const pills = [...document.querySelectorAll('button.curbtn')];
+
+  for (const [label, codes] of CUR_GROUPS) {
+    const g = document.createElement('optgroup');
+    g.label = label;
+    for (const code of codes) {
+      const [sym, name] = CURRENCIES[code];
+      g.append(new Option(`${code} — ${name} (${sym})`, code));
+    }
+    sel.append(g);
+  }
+
+  function setCurrency(code) {
+    const [sym, , suffix] = CURRENCIES[code];
+    CUR = { code, sym, suffix: !!suffix };
+    /* a pill lights up only when it owns the choice; otherwise the dropdown does */
+    const pill = pills.find(b => b.dataset.code === code);
+    pills.forEach(b => b.classList.toggle('active', b === pill));
+    sel.classList.toggle('active', !pill);
+    sel.value = code;
+    document.querySelectorAll('.var[data-prefix="$"][data-key]').forEach(formatVar);
+    document.querySelectorAll('[data-calc]').forEach(recompute);
+  }
+
+  pills.forEach(btn => btn.addEventListener('click', () => setCurrency(btn.dataset.code)));
+  sel.addEventListener('change', () => setCurrency(sel.value));
+  sel.value = CUR.code;
+})();
+
+/* ---------- table of contents ---------- */
+(function buildToc() {
+  const LABELS = [
+    ['·', 'Featured'],
+    ['I', 'Small habits'],
+    ['II', 'Saving'],
+    ['III', 'Investing'],
+    ['IV', 'Present value'],
+    ['V', 'Inflation & taxes'],
+    ['VI', 'Time'],
+    ['VII', 'Starting early'],
+    ['VIII', 'Reaching a goal'],
+    ['IX', 'The big wins'],
+    ['X', 'Investing behavior'],
+    ['XI', 'Housing'],
+    ['XII', 'Debt'],
+  ];
+  const sections = Array.from(document.querySelectorAll('main > section'));
+  if (sections.length !== LABELS.length) return;
+
+  const nav = document.createElement('nav');
+  nav.id = 'toc';
+  nav.setAttribute('aria-label', 'Sections');
+
+  sections.forEach((sec, idx) => {
+    const [num, label] = LABELS[idx];
+    sec.id = 'sec-' + idx;
+    const a = document.createElement('a');
+    a.href = '#sec-' + idx;
+    a.innerHTML = `<span class="toc-num">${num}</span><span>${label}</span>`;
+    nav.appendChild(a);
+  });
+  document.body.appendChild(nav);
+
+  const links = nav.querySelectorAll('a');
+  const setActive = id => links.forEach(a =>
+    a.classList.toggle('toc-active', a.getAttribute('href') === '#' + id));
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) setActive(e.target.id); });
+  }, { rootMargin: '-35% 0px -55% 0px' });
+  sections.forEach(sec => observer.observe(sec));
+  setActive('sec-0');
+})();
+
+/* ---------- show formula ---------- */
+(function addFormulas() {
+  // shared building blocks
+  const LUMP  = 'FV = P · (1+r)<sup>n</sup>';
+  const ANN   = 'FV = C · ((1+r)<sup>n</sup> − 1) / r &nbsp;·&nbsp; C = amount per year';
+  const ANNM  = 'FV = PM · ((1+i)<sup>m</sup> − 1) / i &nbsp;·&nbsp; i = r/12, m = 12 · years';
+  const ANNW  = 'FV = PW · ((1+i)<sup>m</sup> − 1) / i &nbsp;·&nbsp; i = r/52, m = 52 · years';
+  const PV    = 'PV = F / (1+r)<sup>n</sup>';
+  const PMT   = 'PMT = P · i / (1 − (1+i)<sup>−m</sup>) &nbsp;·&nbsp; i = r/12, m = 12 · years';
+  const REAL  = 'real value = nominal / (1+π)<sup>n</sup> &nbsp;·&nbsp; π = inflation';
+  const REQ   = 'PM = goal / AF &nbsp;·&nbsp; AF = ((1+i)<sup>m</sup> − 1) / i (future value of 1 per month)';
+
+  const FORMULAS = {
+    hero: [ 'yearly amount C = cost · days per year', ANN, 'spent = C · years' ],
+    coffee5: [ 'per year = price · days', 'total = per year · years' ],
+    latte4: [ 'year = price · days per week · 52', 'week = price · days per week &nbsp;·&nbsp; month = year / 12' ],
+    workday: [ 'cups = days per week · weeks', 'year = cups · price &nbsp;·&nbsp; daily equivalent = year / 365' ],
+    latte2: [ 'total = price · days per week · 52 · years' ],
+    smoker: [ 'year = price · 365 &nbsp;·&nbsp; decade = year · 10' ],
+    latefee: [ 'year = fee · 12 &nbsp;·&nbsp; decade = fee · 120' ],
+    dollarday: [ 'C = daily amount · 365', ANN ],
+    nest: [ 'FV = start · (1+i)<sup>m</sup> + PM · ((1+i)<sup>m</sup> − 1) / i &nbsp;·&nbsp; i = r/12, m = 12 · years' ],
+    lump5: [ LUMP ],
+    monthly150: [ ANNM ],
+    millionaire: [ 'C = daily amount · 365', 'years n = ln(1 + goal · r / C) / ln(1+r)' ],
+    sp500: [ LUMP ],
+    hotstock: [ LUMP, 'total return = FV / P − 1' ],
+    mortgage: [ 'FV₁ = A · ((1+r)<sup>n</sup> − 1) / r', 'FV₂ = FV₁ · (1+r)<sup>extra years</sup>' ],
+    tworates: [ LUMP + ' &nbsp;·&nbsp; computed once per rate' ],
+    simplecompound: [ 'simple interest = P · r · n', 'compound interest = P · ((1+r)<sup>n</sup> − 1)' ],
+    pv1: [ 'PV = F / (1+r)' ],
+    pv2: [ 'PV = F / (1+r)' ],
+    pv3: [ PV ],
+    pv4: [ PV ],
+    dollarcost: [ 'future cost = amount · (1+r)<sup>n</sup>' ],
+    item: [ 'future price = price · (1+π)<sup>n</sup> &nbsp;·&nbsp; π = inflation' ],
+    mattress: [ REAL ],
+    retire: [ 'required = amount · (1+π)<sup>n</sup> &nbsp;·&nbsp; π = inflation' ],
+    apy: [ 'nominal = P · (1+APY)<sup>n</sup>', REAL ],
+    nestegg: [ REAL ],
+    taxes: [ 'effective rate = APY · (1 − tax)', 'real = P · (1+effective)<sup>n</sup> / (1+π)<sup>n</sup>' ],
+    minutes: [ 'hours = minutes · 365 / 60 &nbsp;·&nbsp; workdays = hours / 8' ],
+    scrolling: [ 'hours = hours per day · 365 &nbsp;·&nbsp; days = hours / 24' ],
+    reading: [ 'pages = pages per day · 365 &nbsp;·&nbsp; books = pages / pages per book' ],
+    mastery: [ 'years = goal hours / (hours per day · 365)' ],
+    wage: [ 'hourly = salary / working hours', 'minutes of life = price / hourly · 60' ],
+    headstart: [ 'saving years = retirement age − starting age', ANNM ],
+    headstart9: [ 'difference = FV(from age 1) − FV(from age 2)', ANNM ],
+    babyfund: [ ANNM ],
+    delaycost: [ ANNM, 'cost of one year = FV(n) − FV(n−1)' ],
+    catchup: [ 'target = friend\u2019s FV at retirement', REQ ],
+    goalMonthly: [ REQ ],
+    goalMillion: [ REQ + ' &nbsp;·&nbsp; m = 12 · (retirement age − start age)' ],
+    goalWeekly: [ 'PW = goal / AF &nbsp;·&nbsp; AF = ((1+i)<sup>m</sup> − 1) / i, i = r/52, m = 52 · years' ],
+    goalDownpayment: [ REQ, 'flat = goal / (12 · years)' ],
+    goalHeadstart: [ 'remaining = goal − start · (1+i)<sup>m</sup>', 'PM = remaining / AF' ],
+    carDeal: [ 'lattes = savings / price &nbsp;·&nbsp; years = lattes / 260 weekdays' ],
+    howManyLattes: [ 'lattes = amount / price &nbsp;·&nbsp; years = lattes / 365' ],
+    salaryNegotiation: [ 'C = raise, added every year', ANN.replace(' &nbsp;·&nbsp; C = amount per year', '') ],
+    overpay: [ LUMP, 'latte years = FV / (price · 365)' ],
+    rebuttal: [ 'per year = price · days', 'share = per year / income' ],
+    lumpVsDca: [ 'lump: FV = A · (1+r)<sup>n</sup>', 'DCA: FV = (A/months as monthly annuity) · (1+r/12)<sup>remaining months</sup>' ],
+    bestDays: [ LUMP + ' &nbsp;·&nbsp; computed once per rate' ],
+    waitForDip: [ 'break-even t = −ln(1−dip) / ln(1+growth)' ],
+    rentVsBuy: [ 'house = price · (1+appreciation)<sup>n</sup>', 'renter = down · (1+i)<sup>m</sup> + PM · ((1+i)<sup>m</sup> − 1) / i' ],
+    mortgage1530: [ PMT, 'total interest = PMT · m − P' ],
+    downPayment: [ 'grown = D · (1+i)<sup>m</sup> at the investing rate', 'extra interest = PMT · m − D at the loan rate' ],
+    overpayInvest: [ ANNM + ' &nbsp;·&nbsp; computed once per rate' ],
+    ccMinimum: [ 'monthly interest = balance · APR / 12', 'payoff months n = ln(pay / (pay − balance·i)) / ln(1+i)', 'interest paid = pay · n − balance' ],
+    studentLoan: [ PMT, 'total interest = PMT · m − P' ],
+    carLoan: [ PMT, 'true cost = PMT · m &nbsp;·&nbsp; interest = true cost − price' ],
+    goodBadDebt: [ 'yearly cost = balance · rate' ],
+    prepayVsInvest: [ ANNM + ' &nbsp;·&nbsp; computed once per rate' ],
+  };
+
+  document.querySelectorAll('[data-calc]').forEach(block => {
+    const lines = FORMULAS[block.dataset.calc];
+    if (!lines) return;
+
+    const btn = document.createElement('button');
+    btn.className = 'fx';
+    btn.type = 'button';
+    btn.innerHTML = '&fnof;x';
+    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-label', 'Show formula');
+    btn.title = 'Show formula';
+
+    const panel = document.createElement('span');
+    panel.className = 'formula-panel';
+    panel.hidden = true;
+    panel.innerHTML = lines.join('<br>');
+
+    // the hero block is a <section>; attach to its sentence paragraph instead
+    const host = block.matches('p') ? block : block.querySelector('.sentence');
+    if (!host) return;
+    host.appendChild(btn);
+    host.appendChild(panel);
+
+    btn.addEventListener('click', () => {
+      const open = panel.hidden;
+      panel.hidden = !open;
+      btn.setAttribute('aria-expanded', String(open));
+    });
+  });
+})();
+</script>
+</body>
+</html>
