@@ -1,0 +1,36 @@
+
+body {
+    font-size: 14px;
+    font-family: helvetica;
+}
+
+.expressions {
+    padding-top: 100px;
+}
+
+.padding-50 {
+    padding-top: 50px;
+}
+
+.padding-25 {
+    padding-top: 25px;
+}
+
+.math-expr-holder {
+    padding-top: 5%;
+    font-size: 1.75rem;
+}
+
+.equal {
+    padding-top: 10%;
+    font-size: 4rem;
+}
+
+.eval-error {
+    background-color: #FF7858;
+    color: white;
+}
+
+.eval-value {
+    padding: 10px;
+}
