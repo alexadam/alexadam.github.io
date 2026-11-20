@@ -91,6 +91,7 @@ out
 # Nuxt.js build / generate output
 .nuxt
 dist
+!demos/printer-friendly/node_modules/@embedpdf/pdfium/dist/
 
 # Gatsby files
 .cache/
