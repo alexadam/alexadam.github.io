@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Printable PDF</title>
+  <link rel="icon" href="favicon.ico" sizes="48x48">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="src/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6z"/></svg>
+      <span>Printable PDF</span>
+    </div>
+    <div class="file-name" id="fileName"></div>
+    <div class="topbar-actions">
+      <button class="btn" id="openBtn" hidden title="Open a PDF, or several to combine them into one">Open or add PDFs</button>
+      <button class="btn primary" id="downloadBtn" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>
+        <span id="downloadLabel">Download printable PDF</span>
+      </button>
+    </div>
+    <input type="file" id="fileInput" accept="application/pdf,.pdf" multiple hidden>
+  </header>
+
+  <main id="dropzone" class="dropzone">
+    <div class="drop-card">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M12 18v-6m0 0-3 3m3-3 3 3"/></svg>
+      <h1>Make a PDF printer-friendly</h1>
+      <p>Drop a PDF here, then choose which backgrounds, pictures and light text to remove or recolor.
+        Pick several to combine them into one.</p>
+      <button class="btn primary big" id="chooseBtn">Choose a PDF</button>
+      <p class="fine">Your file stays on this device. Nothing is uploaded.</p>
+      <p class="error" id="loadError" hidden></p>
+    </div>
+  </main>
+
+  <dialog id="combineDialog" class="combine" aria-labelledby="combineTitle">
+    <form method="dialog" id="combineForm">
+      <h2 id="combineTitle">Combine PDFs</h2>
+      <p class="hint" id="combineHint"></p>
+      <ol class="combine-list" id="combineList"></ol>
+      <p class="error" id="combineError" hidden></p>
+      <div class="combine-actions">
+        <button class="btn small" type="button" id="combineAddBtn">Add more…</button>
+        <span class="spacer"></span>
+        <button class="btn" type="button" id="combineCancelBtn">Cancel</button>
+        <button class="btn" type="button" id="combineReplaceBtn" title="Close the open PDF and open only the new files" hidden>Open instead</button>
+        <button class="btn primary" type="submit" id="combineOkBtn">Combine</button>
+      </div>
+    </form>
+    <input type="file" id="combineInput" accept="application/pdf,.pdf" multiple hidden>
+  </dialog>
+
+  <div id="workspace" class="workspace" hidden>
+    <aside class="sidebar">
+      <section class="panel">
+        <h2>Automatic cleanup</h2>
+        <label class="toggle"><input type="checkbox" id="tBackgrounds" checked><span class="switch"></span>
+          <span class="tlabel">Remove backgrounds<small id="cBackgrounds"></small></span></label>
+        <label class="toggle"><input type="checkbox" id="tImages" checked><span class="switch"></span>
+          <span class="tlabel">Remove pictures<small id="cImages"></small></span></label>
+        <label class="toggle"><input type="checkbox" id="tText" checked><span class="switch"></span>
+          <span class="tlabel">Turn light text and lines black<small id="cText"></small></span></label>
+        <p class="hint">Click anything in the preview to choose what happens to it. Your choices override these switches.</p>
+        <button class="link" id="resetBtn" hidden>Undo all my choices</button>
+      </section>
+
+      <section class="panel pages-panel">
+        <h2>Pages</h2>
+        <form id="rangeForm" class="range-form" autocomplete="off">
+          <input id="rangeInput" type="text" placeholder="e.g. 2, 5-8, 12-" aria-label="Pages or page ranges"
+            aria-describedby="rangeMsg" spellcheck="false">
+          <div class="range-actions">
+            <button class="btn small" type="submit" id="removeRangeBtn" title="Leave these pages out of the download">Remove these</button>
+            <button class="btn small" type="button" id="keepRangeBtn" title="Leave out every page not listed">Keep only these</button>
+          </div>
+        </form>
+        <p class="hint" id="rangeMsg">Separate pages with commas. 5-8 is a range, 12- runs to the last page.</p>
+        <p class="pages-summary" id="pagesSummary" hidden></p>
+        <details class="page-list removed" id="removedList" open hidden>
+          <summary><span>Removed</span><span class="count" id="removedCount"></span></summary>
+          <ul class="runs" id="removedRuns"></ul>
+          <button class="link" id="restorePagesBtn">Restore all pages</button>
+        </details>
+        <details class="page-list kept" id="keptList">
+          <summary><span>Kept</span><span class="count" id="keptCount"></span></summary>
+          <ul class="runs" id="keptRuns"></ul>
+        </details>
+      </section>
+
+      <details class="panel layout-panel" id="layoutPanel" open>
+        <summary><h2>Print layout</h2><span class="layout-sum" id="layoutSum"></span></summary>
+        <div class="layout-row">
+          <span id="perSheetLabel">Pages per sheet</span>
+          <div class="seg" role="radiogroup" aria-labelledby="perSheetLabel">
+            <button type="button" data-per-sheet="1" class="on" role="radio" aria-checked="true">1</button>
+            <button type="button" data-per-sheet="2" role="radio" aria-checked="false">2</button>
+            <button type="button" data-per-sheet="4" role="radio" aria-checked="false">4</button>
+          </div>
+        </div>
+        <label class="layout-row" id="marginRow">
+          <span>Margin</span>
+          <select id="marginSel" class="act" title="Space around the sheet's edge and between pages"></select>
+        </label>
+        <div class="margin-grid" id="marginGrid" role="group" aria-label="Custom margins in millimetres" hidden>
+          <label><span>Top</span><input type="number" data-side="top" step="0.5" min="-100" max="100" inputmode="decimal"><small>mm</small></label>
+          <label><span>Bottom</span><input type="number" data-side="bottom" step="0.5" min="-100" max="100" inputmode="decimal"><small>mm</small></label>
+          <label><span>Left</span><input type="number" data-side="left" step="0.5" min="-100" max="100" inputmode="decimal"><small>mm</small></label>
+          <label><span>Right</span><input type="number" data-side="right" step="0.5" min="-100" max="100" inputmode="decimal"><small>mm</small></label>
+          <label class="wide" id="gapRow"><span>Between pages</span><input type="number" data-side="gap" step="0.5" min="-100" max="100" inputmode="decimal"><small>mm</small></label>
+          <p class="hint wide">From −100 to 100 mm. A negative margin enlarges the page past the sheet's edge and cuts off what lies beyond, such as a wide white border.</p>
+        </div>
+        <label class="layout-row" id="scaleRow">
+          <span>Scale</span>
+          <select id="scaleSel" class="act" title="Size of every page's content, as a share of the size that fits its place on the sheet"></select>
+        </label>
+        <div class="margin-grid" id="scaleGrid" role="group" aria-label="Custom scale in percent" hidden>
+          <label class="wide"><span>Custom scale</span><input type="number" id="scaleInput" step="1" min="10" max="400" inputmode="decimal"><small>%</small></label>
+          <p class="hint wide">From 10 to 400%. 100% fits the page in its place. Above 100% the content grows past it and what lies beyond the sheet's edge is cut off.</p>
+        </div>
+        <div class="layout-preview" id="layoutPreview" hidden aria-hidden="true"></div>
+        <p class="hint" id="layoutMsg">Each page prints on its own sheet.</p>
+      </details>
+
+      <section class="panel split-panel">
+        <h2>Split into files</h2>
+        <label class="toggle"><input type="checkbox" id="splitChk"><span class="switch"></span>
+          <span class="tlabel">Download as a ZIP of smaller PDFs<small id="splitSum"></small></span></label>
+        <div class="margin-grid" id="splitGrid" hidden>
+          <label class="wide"><span>Pages in each file</span><input type="number" id="splitInput" step="1" min="1" max="9999"
+            value="10" inputmode="numeric" aria-describedby="splitSum"><small id="splitUnit">pages</small></label>
+        </div>
+      </section>
+
+      <section class="panel inspector" id="inspector" hidden></section>
+
+      <section class="panel elements">
+        <h2>On this page</h2>
+        <div id="groups"></div>
+      </section>
+    </aside>
+
+    <nav class="thumbs" id="thumbs" aria-label="Pages"></nav>
+
+    <section class="stage">
+      <div class="toolbar">
+        <div class="pager">
+          <button class="icon-btn" id="prevBtn" aria-label="Previous page"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+          <label class="page-jump">Page <input id="pageInput" type="text" inputmode="numeric" autocomplete="off" value="1" aria-label="Page number" title="Type a page number and press Enter (G)"> of <span id="pageCount">1</span></label>
+          <button class="icon-btn" id="nextBtn" aria-label="Next page"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button>
+          <span class="badge warn" id="scanBadge" hidden>Looks like a scan</span>
+          <span class="badge removed" id="removedBadge" hidden>Removed from download</span>
+          <button class="btn small" id="togglePageBtn" title="Leave this page out of the download (X)">Remove page</button>
+        </div>
+        <div class="seg" role="group" aria-label="View">
+          <button data-view="split" class="on">Before &amp; after</button>
+          <button data-view="before">Before</button>
+          <button data-view="after">After</button>
+        </div>
+        <div class="tools">
+          <div class="seg" role="group" aria-label="Selection tool">
+            <button data-tool="pick" class="on" title="Click to pick one element">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 4 7 17 2.5-7.5L21 11z"/></svg>Click
+            </button>
+            <button data-tool="area" title="Drag a rectangle to select everything inside it (R)">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4" /></svg>Area
+            </button>
+          </div>
+          <label class="check" id="includeTextLabel" hidden><input type="checkbox" id="includeTextChk" checked> Include text</label>
+        </div>
+        <label class="check"><input type="checkbox" id="markersChk" checked> Show markers</label>
+      </div>
+      <div class="scan-note" id="scanNote" hidden>
+        This page is a scanned image, so the words and the background are the same picture. Removing it would blank the page, so it is left alone. Scan cleanup is not available yet.
+      </div>
+      <div class="panes" id="panes">
+        <figure class="pane" id="beforePane">
+          <figcaption>Before <span class="sub">click an element to change it</span></figcaption>
+          <div class="sheet"><canvas id="beforeCanvas"></canvas><div class="overlay" id="beforeOverlay"></div></div>
+        </figure>
+        <figure class="pane" id="afterPane">
+          <figcaption>After <span class="sub" id="afterSub">the PDF you will download</span><span class="busy" id="busy" hidden>Updating…</span></figcaption>
+          <div class="sheet" id="afterSheet"><canvas id="afterCanvas"></canvas><div class="overlay" id="afterOverlay"></div>
+            <div class="removed-note" id="removedNote" hidden>
+              <p>This page is removed from the download.</p>
+              <button class="btn small" id="restorePageBtn">Restore page</button>
+            </div>
+          </div>
+        </figure>
+      </div>
+      <p class="keys">Keys: <kbd>←</kbd><kbd>→</kbd> pages · <kbd>G</kbd> go to page · <kbd>X</kbd> remove/restore page · <kbd>Del</kbd> remove · <kbd>B</kbd> make black · <kbd>W</kbd> fill white · <kbd>K</kbd> keep · <kbd>R</kbd> area tool · <kbd>Esc</kbd> deselect · click the same spot again to pick what's underneath · <kbd>Shift</kbd>+drag adds to an area selection</p>
+    </section>
+  </div>
+</body>
+</html>
